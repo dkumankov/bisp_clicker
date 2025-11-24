@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="BISP Clicker - An educational idle clicker game">
+    <title>BISP Clicker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="mobile.css">
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-container">
+                <img src="assets/BISP-Logo-horiz_1.webp" alt="BISP Logo" class="logo" id="logo">
+            </div>
+            <div class="stats-container">
+                <div class="stat-item">
+                    <div class="stat-label">IQ</div>
+                    <div class="stat-value" id="iq-display">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">per second</div>
+                    <div class="stat-value secondary" id="iq-per-sec">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Graduations</div>
+                    <div class="stat-value secondary" id="graduations-display">0</div>
+                </div>
+            </div>
+            <div class="copyright">
+                <div class="copyright-text">Created by BISP Student</div>
+                <div class="copyright-name">Dima Kumankov 2JM</div>
+                <div class="copyright-class">with AI and Dad</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Game Area -->
+    <main class="game-container">
+        <!-- Study Button Section -->
+        <section class="study-section">
+            <button class="study-button" id="study-button">
+                <span class="study-text">STUDY</span>
+            </button>
+            <div class="click-power" id="click-power">+1 IQ</div>
+        </section>
+
+        <!-- Tabs Navigation -->
+        <nav class="tabs">
+            <button class="tab active" data-tab="students">
+                <span class="tab-icon">🎓</span>
+                <span class="tab-label">Students</span>
+            </button>
+            <button class="tab" data-tab="teachers">
+                <span class="tab-icon">👨‍🏫</span>
+                <span class="tab-label">Teachers</span>
+            </button>
+            <button class="tab" data-tab="facilities">
+                <span class="tab-icon">🏫</span>
+                <span class="tab-label">Facilities</span>
+            </button>
+            <button class="tab" data-tab="upgrades">
+                <span class="tab-icon">⚡</span>
+                <span class="tab-label">Upgrades</span>
+            </button>
+        </nav>
+
+        <!-- Content Panels -->
+        <div class="content-panel" id="content-panel">
+            <!-- Students Tab -->
+            <div class="tab-content active" id="students-content">
+                <div class="buildings-grid" id="students-grid"></div>
+            </div>
+
+            <!-- Teachers Tab -->
+            <div class="tab-content" id="teachers-content">
+                <div class="buildings-grid" id="teachers-grid"></div>
+            </div>
+
+            <!-- Facilities Tab -->
+            <div class="tab-content" id="facilities-content">
+                <div class="buildings-list" id="facilities-list"></div>
+            </div>
+
+            <!-- Upgrades Tab -->
+            <div class="tab-content" id="upgrades-content">
+                <div class="buildings-list" id="upgrades-list"></div>
+            </div>
+        </div>
+
+        <!-- Graduate Button (shown when available) -->
+        <button class="graduate-button hidden" id="graduate-button">
+            🎓 GRADUATE
+        </button>
+    </main>
+
+    <!-- Floating Numbers Container -->
+    <div class="floating-numbers" id="floating-numbers"></div>
+
+    <!-- Achievement Popup -->
+    <div class="achievement-popup hidden" id="achievement-popup">
+        <div class="achievement-icon">🏆</div>
+        <div class="achievement-content">
+            <div class="achievement-title">Achievement Unlocked!</div>
+            <div class="achievement-name" id="achievement-name"></div>
+            <div class="achievement-desc" id="achievement-desc"></div>
+        </div>
+    </div>
+
+    <!-- Offline Progress Modal -->
+    <div class="modal hidden" id="offline-modal">
+        <div class="modal-content">
+            <h2>Welcome Back!</h2>
+            <p>While you were away, you earned:</p>
+            <div class="offline-iq" id="offline-iq">0 IQ</div>
+            <button class="modal-button" id="close-offline-modal">Continue</button>
+        </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+
+</html>
