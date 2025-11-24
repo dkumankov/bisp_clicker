@@ -480,7 +480,9 @@ export class GameEngine {
     }
 
     formatNumberShort(num) {
-        if (num < 1000) {
+        if (num < 10) {
+            return parseFloat(num.toFixed(1)).toString();
+        } else if (num < 1000) {
             return Math.floor(num).toString();
         } else if (num < 1000000) {
             return parseFloat((num / 1000).toFixed(1)) + 'K';
@@ -493,3 +495,4 @@ export class GameEngine {
         }
     }
 }
+
