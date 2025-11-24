@@ -4,7 +4,7 @@ export const STUDENTS = [
         id: "year1",
         name: "👶 Year 1 Student",
         base_cost: 15,
-        base_production: 0.2,
+        base_production: 1,
         cost_multiplier: 1.15,
         description: "A young learner just starting their journey"
     },
@@ -12,7 +12,7 @@ export const STUDENTS = [
         id: "year3",
         name: "🧒 Year 3 Student",
         base_cost: 350,
-        base_production: 3,
+        base_production: 5,
         cost_multiplier: 1.16,
         description: "Building foundational skills"
     },
@@ -464,3 +464,4 @@ export const PRESTIGE_CONFIG = {
     base_threshold: 1000000,  // IQ needed for first graduation
     threshold_multiplier: 2.0  // Cost increase per graduation (2x each time)
 };
+
