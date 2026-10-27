@@ -514,8 +514,10 @@ export const COMBO_CONFIG = {
 
 // Golden School Badge: a random bonus that appears on screen
 export const GOLDEN_CONFIG = {
-    min_delay: 45,    // Seconds until the next badge appears (random range)
-    max_delay: 120,
+    first_min_delay: 30,  // Seconds of play until the very first badge (random range)
+    first_max_delay: 60,
+    min_delay: 180,   // Seconds until the next badge appears (random range)
+    max_delay: 420,
     lifetime: 12,     // Seconds the badge stays on screen
     multiplier: 7,    // IQ/s multiplier while the bonus is active
     duration: 30      // Seconds the bonus lasts
