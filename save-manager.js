@@ -1,10 +1,32 @@
+// Save format version. v1 = original format (no version field).
+// v2 only ADDS optional fields (best_combo, golden_clicks), so v1 saves load unchanged.
+const SAVE_VERSION = 2;
+
+// Ignore "away" times shorter than this when showing the welcome-back screen
+const MIN_OFFLINE_SECONDS = 30;
+const MAX_OFFLINE_SECONDS = 86400;  // 24 hours
+
+/** Return a finite number, or the fallback for NaN/undefined/garbage */
+function num(value, fallback = 0) {
+    return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+}
+
+/** Copy saved values over the defaults, so ids added in newer versions are never missing */
+function mergeMap(defaults, saved) {
+    return { ...defaults, ...(saved && typeof saved === 'object' ? saved : {}) };
+}
+
 export class SaveManager {
     constructor(saveKey = 'bisp_clicker_save') {
         this.saveKey = saveKey;
+        this.locked = false;  // Set while resetting so nothing re-writes the save
     }
 
     saveGame(gameEngine) {
+        if (this.locked) return false;
+
         const saveData = {
+            version: SAVE_VERSION,
             iq: gameEngine.iq,
             total_iq_earned: gameEngine.total_iq_earned,
             lifetime_iq: gameEngine.lifetime_iq,
@@ -17,8 +39,11 @@ export class SaveManager {
             achievements: gameEngine.achievements,
             certificates: gameEngine.certificates,
             graduations: gameEngine.graduations,
+            best_combo: gameEngine.best_combo,
+            golden_clicks: gameEngine.golden_clicks,
             last_save_time: Date.now(),
-            iq_per_second: gameEngine.iq_per_second
+            // Steady rate without temporary events, so bonuses don't inflate offline progress
+            iq_per_second: gameEngine.calculateIQPerSecond(false)
         };
 
         try {
@@ -30,64 +55,70 @@ export class SaveManager {
         }
     }
 
+    /**
+     * Load a save into the engine.
+     * @returns {{loaded: boolean, offlineIQ: number, offlineSeconds: number}}
+     */
     loadGame(gameEngine) {
+        const result = { loaded: false, offlineIQ: 0, offlineSeconds: 0 };
         try {
             const saveDataStr = localStorage.getItem(this.saveKey);
             if (!saveDataStr) {
-                return false;
+                return result;
             }
 
             const saveData = JSON.parse(saveDataStr);
 
             // Restore game state
-            gameEngine.iq = saveData.iq || 0.0;
-            gameEngine.total_iq_earned = saveData.total_iq_earned || 0.0;
-            gameEngine.lifetime_iq = saveData.lifetime_iq || 0.0;
-            gameEngine.click_power = saveData.click_power || 1.0;
-            gameEngine.clicks = saveData.clicks || 0;
-            gameEngine.students = saveData.students || {};
-            gameEngine.teachers = saveData.teachers || {};
-            gameEngine.facilities = saveData.facilities || {};
-            gameEngine.upgrades = saveData.upgrades || {};
-            gameEngine.achievements = saveData.achievements || {};
-            gameEngine.certificates = saveData.certificates || 0;
-            gameEngine.graduations = saveData.graduations || 0;
+            gameEngine.iq = num(saveData.iq);
+            gameEngine.total_iq_earned = num(saveData.total_iq_earned);
+            gameEngine.lifetime_iq = num(saveData.lifetime_iq);
+            gameEngine.click_power = num(saveData.click_power, 1.0) || 1.0;
+            gameEngine.clicks = num(saveData.clicks);
+            gameEngine.students = mergeMap(gameEngine.students, saveData.students);
+            gameEngine.teachers = mergeMap(gameEngine.teachers, saveData.teachers);
+            gameEngine.facilities = mergeMap(gameEngine.facilities, saveData.facilities);
+            gameEngine.upgrades = mergeMap(gameEngine.upgrades, saveData.upgrades);
+            gameEngine.achievements = mergeMap(gameEngine.achievements, saveData.achievements);
+            gameEngine.certificates = num(saveData.certificates);
+            gameEngine.graduations = num(saveData.graduations);
+            gameEngine.best_combo = num(saveData.best_combo);      // Missing in v1 saves
+            gameEngine.golden_clicks = num(saveData.golden_clicks);  // Missing in v1 saves
+            result.loaded = true;
 
             // Calculate offline progress
-            const lastSaveTime = saveData.last_save_time || Date.now();
-            const iqPerSecond = saveData.iq_per_second || 0.0;
-            const offlineIQ = this.calculateOfflineProgress(lastSaveTime, iqPerSecond);
+            const lastSaveTime = num(saveData.last_save_time, Date.now());
+            const iqPerSecond = num(saveData.iq_per_second);
+            const seconds = this.getAwaySeconds(lastSaveTime);
+            const offlineIQ = iqPerSecond * seconds;
 
             if (offlineIQ > 0) {
                 gameEngine.addIQ(offlineIQ);
-                return offlineIQ;  // Return offline IQ for display
+                if (seconds >= MIN_OFFLINE_SECONDS) {
+                    result.offlineIQ = offlineIQ;
+                    result.offlineSeconds = seconds;
+                }
             }
-
-            return true;
+            return result;
         } catch (e) {
             console.error('Error loading game:', e);
-            return false;
+            return result;
         }
     }
 
-    calculateOfflineProgress(lastSaveTime, iqPerSecond) {
-        const currentTime = Date.now();
-        let timeElapsed = (currentTime - lastSaveTime) / 1000;  // Convert to seconds
-
-        // Cap at 24 hours (86400 seconds)
-        timeElapsed = Math.min(timeElapsed, 86400);
-
-        // Calculate offline IQ
-        const offlineIQ = iqPerSecond * timeElapsed;
-
-        return offlineIQ;
+    /** Seconds since the given timestamp, capped at 24 hours (clock changes can't go negative) */
+    getAwaySeconds(lastTime) {
+        const elapsed = (Date.now() - lastTime) / 1000;
+        return Math.min(Math.max(elapsed, 0), MAX_OFFLINE_SECONDS);
     }
 
     saveExists() {
         return localStorage.getItem(this.saveKey) !== null;
     }
 
+    /** Erase the save and block further saves until the page is reloaded */
     deleteSave() {
+        this.locked = true;
         try {
             localStorage.removeItem(this.saveKey);
             return true;
@@ -97,3 +128,5 @@ export class SaveManager {
         }
     }
 }
+
+export { MIN_OFFLINE_SECONDS };

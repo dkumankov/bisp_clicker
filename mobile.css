@@ -1,204 +1,502 @@
-/* ===== Mobile Optimizations ===== */
+/* ===== BISP Clicker: phone layouts =====
+   1. Portrait phones: compact sticky HUD, big thumb-zone click button,
+      shop as a bottom sheet with tabs.
+   2. Landscape phones: two columns (game left, shop right).
+   All tap targets are >= 44px and safe areas (notch / home bar) are respected. */
 
-/* Prevent double-tap zoom on all interactive elements */
-button,
-.tab,
-.study-button,
-.building-button,
-.list-item-button,
-.graduate-button {
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
-}
-
-/* Smooth scrolling for iOS */
-.content-panel {
-    -webkit-overflow-scrolling: touch;
-}
-
-/* Mobile-specific styles (phones and small tablets) */
-@media (max-width: 768px) {
-
-    /* Header adjustments */
-    .header-content {
-        flex-direction: column;
-        gap: 1rem;
-        text-align: center;
-        padding: 1rem;
+/* ----- Portrait phones & small tablets ----- */
+@media (max-width: 768px) and (orientation: portrait) {
+    :root {
+        --hud-h: 76px;
+        --tabbar-h: 60px;
+        --handle-h: 24px;
+        --sheet-closed-h: calc(var(--tabbar-h) + var(--handle-h) + env(safe-area-inset-bottom));
     }
 
-    .logo-container {
-        justify-content: center;
+    /* The page itself never scrolls: HUD on top, play field fills the rest */
+    html,
+    body {
+        height: 100%;
+        overflow: hidden;
+    }
+
+    .app {
+        height: 100vh;
+        height: 100dvh;
+        min-height: 0;
+    }
+
+    /* Compact sticky HUD */
+    .hud {
+        flex-wrap: nowrap;
+        gap: 0.5rem;
+        padding: 0.4rem max(0.75rem, env(safe-area-inset-right)) 0.4rem max(0.75rem, env(safe-area-inset-left));
+        padding-top: calc(0.4rem + env(safe-area-inset-top));
+        border-bottom-width: 2px;
     }
 
     .logo {
-        height: 40px;
+        display: none;
     }
 
-    .stats-container {
-        flex-direction: row;
-        gap: 2rem;
+    .hud-stats {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
         justify-content: center;
     }
 
-    .stat-item {
-        text-align: center;
+    .hud-iq {
+        font-size: 2rem;
     }
 
-    .stat-label {
-        font-size: 0.75rem;
+    .hud-sub {
+        flex-wrap: nowrap;
+        gap: 0.3rem;
     }
 
-    .stat-value {
-        font-size: 1.25rem;
+    .hud-chip {
+        padding: 0.2rem 0.55rem;
+        font-size: 0.8rem;
     }
 
-    .stat-value.secondary {
-        font-size: 1rem;
+    .buff-bar {
+        position: absolute;
+        left: 0.75rem;
+        right: 0.75rem;
+        top: 100%;
+        margin-top: 6px;
+        flex-basis: auto;
     }
 
-    .copyright {
-        padding-left: 0;
-        text-align: center;
+    .toasts {
+        top: calc(var(--hud-h) + env(safe-area-inset-top) + 44px);
     }
 
-    /* Game container padding */
-    .game-container {
-        padding: 0 1rem;
+    /* Play field: campus on top, click button anchored low in the thumb zone */
+    .game {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        padding: 0.6rem max(0.75rem, env(safe-area-inset-right)) 0 max(0.75rem, env(safe-area-inset-left));
+        min-height: 0;
+        overflow: hidden;
     }
 
-    /* Study button - larger for easier tapping */
+    .play {
+        position: static;
+        flex: 1;
+        min-height: 0;
+        justify-content: space-between;
+        gap: 0.5rem;
+        padding-bottom: calc(var(--sheet-closed-h) + 14px);
+    }
+
+    .campus {
+        padding: 0.5rem 0.75rem;
+    }
+
+    .campus-scene {
+        font-size: 1.6rem;
+        min-height: 2rem;
+    }
+
+    .campus-name {
+        margin-top: 0.1rem;
+        font-size: 0.95rem;
+    }
+
+    .campus-progress {
+        margin-top: 0.25rem;
+        height: 6px;
+    }
+
+    .campus-next {
+        font-size: 0.7rem;
+    }
+
+    .graduate-button {
+        align-self: center;
+        width: 100%;
+    }
+
+    .study-section {
+        margin-top: auto;
+        gap: 0.5rem;
+    }
+
     .study-button {
-        width: 160px;
-        height: 160px;
+        --study-size: min(clamp(130px, 30dvh, 210px), 58vw);
     }
 
     .study-text {
-        font-size: 1.75rem;
+        font-size: 1.5rem;
     }
 
-    .click-power {
-        font-size: 1.125rem;
+    .combo {
+        min-width: 0;
+        width: min(100%, 240px);
     }
 
-    /* Tabs - stack vertically for better touch targets */
-    .tabs {
+    .credits {
+        display: none;
+    }
+
+    /* Shop as a bottom sheet: only the tab bar shows until a tab is tapped */
+    .sheet-scrim {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 80;
+        background: rgba(0, 10, 30, 0.45);
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s, visibility 0.3s;
+    }
+
+    .sheet-scrim.visible {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .shop {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 90;
+        display: flex;
         flex-direction: column;
-        gap: 0.75rem;
-        margin: 1.5rem 0 1rem;
+        border-radius: 20px 20px 0 0;
+        padding-bottom: env(safe-area-inset-bottom);
+        box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.3);
+        background: var(--white);
+    }
+
+    .sheet-handle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: var(--handle-h);
+        padding: 0;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+    }
+
+    .sheet-grip {
+        width: 44px;
+        height: 5px;
+        border-radius: 3px;
+        background: #c3ccd8;
+    }
+
+    .tabs {
+        gap: 0.25rem;
+        padding: 0 max(0.5rem, env(safe-area-inset-right)) 0.4rem max(0.5rem, env(safe-area-inset-left));
+        background: transparent;
     }
 
     .tab {
-        min-width: 100%;
-        padding: 1.25rem;
-        font-size: 1.125rem;
+        flex-direction: column;
+        gap: 0;
+        min-height: calc(var(--tabbar-h) - 4px);
+        padding: 0.25rem 0.1rem;
+        font-size: 0.7rem;
     }
 
     .tab-icon {
-        font-size: 1.75rem;
+        font-size: 1.35rem;
+        line-height: 1.2;
     }
 
-    /* Content panel adjustments */
+    .tab-label {
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
     .content-panel {
-        padding: 1.5rem;
-        min-height: 400px;
-        max-height: 500px;
+        height: 0;
+        min-height: 0;
+        max-height: none;
+        padding: 0 0.75rem;
+        transition: height 0.35s cubic-bezier(0.2, 0.9, 0.3, 1), padding 0.35s;
     }
 
-    /* Building cards - single column */
+    .shop.open .content-panel {
+        height: min(56dvh, 520px);
+        padding: 0.5rem 0.75rem 1rem;
+    }
+
+    /* Single column cards on phones */
     .buildings-grid {
         grid-template-columns: 1fr;
-        gap: 1rem;
+        gap: 0.65rem;
     }
 
-    .building-card {
-        padding: 1.5rem;
-    }
-
-    .building-name {
-        font-size: 1.25rem;
-    }
-
-    .building-button {
-        padding: 1rem;
-        font-size: 1rem;
-        min-height: 48px;
-        /* Accessibility minimum touch target */
-    }
-
-    /* List items - stack vertically */
+    .building-card,
     .list-item {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
-        padding: 1.5rem;
+        padding: 0.8rem;
     }
 
-    .list-item-name {
-        font-size: 1.375rem;
+    .list-item {
+        flex-wrap: wrap;
     }
 
-    .list-item-desc {
-        font-size: 1rem;
+    .list-item-info {
+        flex: 1 1 140px;
     }
 
-    .list-item-button,
-    .list-item-status {
-        width: 100%;
-        text-align: center;
-        padding: 1rem;
-        font-size: 1.125rem;
+    .list-item-button {
+        flex: 1 1 100%;
+    }
+
+    .building-button,
+    .list-item-button {
         min-height: 48px;
+        font-size: 0.95rem;
     }
 
-    /* Graduate button - full width at bottom */
-    .graduate-button {
-        bottom: 1rem;
-        right: 1rem;
-        left: 1rem;
-        width: calc(100% - 2rem);
-        padding: 1.5rem;
-        font-size: 1.375rem;
-    }
-
-    /* Achievement popup - full width */
-    .achievement-popup {
-        right: 1rem;
-        left: 1rem;
-        top: 100px;
-        max-width: calc(100% - 2rem);
-    }
-
-    /* Modal adjustments */
     .modal-content {
-        padding: 2rem;
-        margin: 1rem;
-    }
-
-    .modal-content h2 {
-        font-size: 1.75rem;
-    }
-
-    .offline-iq {
-        font-size: 2.5rem;
+        padding: 1.5rem 1.1rem;
     }
 }
 
-/* Tablet landscape and larger phones */
-@media (min-width: 769px) and (max-width: 1024px) {
-    .header-content {
-        padding: 0.75rem 1.5rem;
+/* ----- Very narrow phones (360px and below) ----- */
+@media (max-width: 380px) and (orientation: portrait) {
+    .hud-iq {
+        font-size: 1.75rem;
     }
 
-    .game-container {
-        padding: 0 1.5rem;
+    .hud-chip-grad {
+        display: none;
     }
 
-    .buildings-grid {
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    .hud-actions {
+        gap: 0.35rem;
+    }
+
+    .tab {
+        font-size: 0.65rem;
+    }
+
+    .campus-scene {
+        font-size: 1.4rem;
+    }
+}
+
+/* Very short portrait screens (small phones with browser bars) */
+@media (max-width: 768px) and (orientation: portrait) and (max-height: 600px) {
+    .campus-scene,
+    .campus-next {
+        display: none;
+    }
+
+    .study-button {
+        --study-size: min(clamp(110px, 26dvh, 180px), 52vw);
+    }
+}
+
+/* ----- Landscape phones: game on the left, shop on the right ----- */
+@media (orientation: landscape) and (max-height: 520px) {
+    :root {
+        --hud-h: 56px;
+    }
+
+    html,
+    body {
+        height: 100%;
+        overflow: hidden;
+    }
+
+    .app {
+        height: 100vh;
+        height: 100dvh;
+        min-height: 0;
+    }
+
+    .hud {
+        flex-wrap: nowrap;
+        gap: 0.75rem;
+        padding: 0.25rem max(0.75rem, env(safe-area-inset-right)) 0.25rem max(0.75rem, env(safe-area-inset-left));
+        border-bottom-width: 2px;
+    }
+
+    .logo {
+        height: 30px;
+    }
+
+    .hud-stats {
+        gap: 0.75rem;
+    }
+
+    .hud-iq {
+        font-size: 1.6rem;
+    }
+
+    .hud-chip {
+        padding: 0.15rem 0.5rem;
+        font-size: 0.78rem;
+    }
+
+    .buff-bar {
+        position: absolute;
+        left: 50%;
+        top: 100%;
+        transform: translateX(-50%);
+        margin-top: 4px;
+        width: min(60vw, 320px);
+        flex-basis: auto;
+    }
+
+    .toasts {
+        top: calc(var(--hud-h) + 8px);
+        width: min(46vw, 360px);
+    }
+
+    .game {
+        grid-template-columns: minmax(0, 42%) minmax(0, 1fr);
+        gap: 0.75rem;
+        padding: 0.5rem max(0.75rem, env(safe-area-inset-right)) calc(0.5rem + env(safe-area-inset-bottom)) max(0.75rem, env(safe-area-inset-left));
+        min-height: 0;
+        overflow: hidden;
+        align-items: stretch;
+    }
+
+    .play {
+        position: static;
+        min-height: 0;
+        justify-content: center;
+        gap: 0.4rem;
+    }
+
+    .campus {
+        padding: 0.35rem 0.6rem;
+    }
+
+    .campus-scene {
+        font-size: 1.3rem;
+        min-height: 1.6rem;
+    }
+
+    .campus-name {
+        font-size: 0.85rem;
+        margin-top: 0;
+    }
+
+    .campus-progress {
+        margin-top: 0.2rem;
+        height: 5px;
+    }
+
+    .campus-next {
+        display: none;
+    }
+
+    .study-section {
+        gap: 0.3rem;
+    }
+
+    .study-button {
+        --study-size: min(40dvh, 150px);
+    }
+
+    .study-text {
+        font-size: 1.2rem;
+    }
+
+    .combo {
+        min-width: 0;
+        padding: 0.2rem 0.7rem;
+    }
+
+    .combo-count {
+        font-size: 1.2rem;
+    }
+
+    .graduate-button {
+        padding: 0.5rem 1rem;
+        font-size: 0.95rem;
+    }
+
+    .credits {
+        display: none;
+    }
+
+    /* Shop stays a normal panel in landscape (no bottom sheet) */
+    .shop {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        height: 100%;
+    }
+
+    .tabs {
+        padding: 0.35rem;
+        gap: 0.25rem;
+    }
+
+    .tab {
+        min-height: 44px;
+        padding: 0.25rem;
+        font-size: 0.8rem;
+        gap: 0.25rem;
+    }
+
+    .tab-label {
+        display: none;
+    }
+
+    .tab-icon {
+        font-size: 1.3rem;
     }
 
     .content-panel {
-        padding: 1.75rem;
+        flex: 1;
+        min-height: 0;
+        max-height: none;
+        padding: 0.5rem;
+    }
+
+    .buildings-grid {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+
+    .building-card,
+    .list-item {
+        padding: 0.65rem;
+    }
+
+    .modal-content {
+        padding: 1rem;
+    }
+
+    .modal-emoji {
+        font-size: 2rem;
+    }
+}
+
+/* Small landscape phones (e.g. 568px wide): drop non-essential HUD items */
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 700px) {
+    .logo,
+    .hud-chip-grad {
+        display: none;
+    }
+}
+
+/* Landscape phones with room for tab labels */
+@media (orientation: landscape) and (max-height: 520px) and (min-width: 700px) {
+    .tab-label {
+        display: inline;
+        font-size: 0.72rem;
+    }
+
+    .tab {
+        flex-direction: column;
+        gap: 0;
     }
 }

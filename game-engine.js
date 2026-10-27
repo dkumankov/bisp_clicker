@@ -1,4 +1,4 @@
-import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, ACHIEVEMENTS, PRESTIGE_CONFIG } from './data.js';
+import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, ACHIEVEMENTS, PRESTIGE_CONFIG, COMBO_CONFIG, GOLDEN_CONFIG, CAMPUS_STAGES } from './data.js';
 
 export class GameEngine {
     constructor() {
@@ -29,7 +29,15 @@ export class GameEngine {
         this.certificates = 0;
         this.graduations = 0;
 
-        // Active events
+        // Combo streak (runtime only, except best_combo which is saved)
+        this.combo = 0;
+        this.best_combo = 0;
+        this.last_click_time = 0;
+
+        // Golden badges caught (saved)
+        this.golden_clicks = 0;
+
+        // Active events (runtime only)
         this.active_events = [];
 
         // Stats
@@ -40,11 +48,56 @@ export class GameEngine {
         this.achievement_notifications = [];
     }
 
-    handleClick() {
+    handleClick(now = performance.now()) {
         this.clicks++;
-        const clickValue = this.calculateClickPower();
+
+        // Extend the combo streak if the click is quick enough, otherwise restart it
+        if (this.combo > 0 && now - this.last_click_time <= COMBO_CONFIG.window_ms) {
+            this.combo++;
+        } else {
+            this.combo = 1;
+        }
+        this.last_click_time = now;
+        this.best_combo = Math.max(this.best_combo, this.combo);
+
+        const clickValue = this.calculateClickPower() * this.getComboMultiplier();
         this.addIQ(clickValue);
         return clickValue;
+    }
+
+    getComboMultiplier() {
+        let mult = 1;
+        for (const tier of COMBO_CONFIG.tiers) {
+            if (this.combo >= tier.min) mult = tier.mult;
+        }
+        return mult;
+    }
+
+    /** Fraction (0..1) of the combo window that is still left, for the combo meter */
+    getComboTimeLeft(now = performance.now()) {
+        if (this.combo === 0) return 0;
+        return Math.max(0, 1 - (now - this.last_click_time) / COMBO_CONFIG.window_ms);
+    }
+
+    /** Called when a Golden School Badge is caught: temporary IQ/s boost */
+    catchGoldenBadge() {
+        this.golden_clicks++;
+        this.active_events = this.active_events.filter(e => e.id !== 'golden');
+        this.active_events.push({
+            id: 'golden',
+            type: 'student_bonus',
+            multiplier: GOLDEN_CONFIG.multiplier,
+            time_remaining: GOLDEN_CONFIG.duration
+        });
+    }
+
+    /** Index of the current campus stage, based on lifetime IQ */
+    getCampusStage() {
+        let stage = 0;
+        CAMPUS_STAGES.forEach((s, i) => {
+            if (this.lifetime_iq >= s.threshold) stage = i;
+        });
+        return stage;
     }
 
     calculateClickPower() {
@@ -73,7 +126,10 @@ export class GameEngine {
         return power;
     }
 
-    calculateIQPerSecond() {
+    /**
+     * @param {boolean} includeEvents - false gives the steady rate (used for offline progress)
+     */
+    calculateIQPerSecond(includeEvents = true) {
         let total = 0.0;
 
         // 1. Calculate production from students (with teacher synergy)
@@ -163,9 +219,11 @@ export class GameEngine {
         }
 
         // Active event bonuses
-        for (const event of this.active_events) {
-            if (event.type === "student_bonus" || event.type === "teacher_boost") {
-                globalMult *= event.multiplier;
+        if (includeEvents) {
+            for (const event of this.active_events) {
+                if (event.type === "student_bonus" || event.type === "teacher_boost") {
+                    globalMult *= event.multiplier;
+                }
             }
         }
 
@@ -323,6 +381,11 @@ export class GameEngine {
         // Update active events
         this.updateEvents(deltaTime);
 
+        // Drop the combo once the streak window has passed
+        if (this.combo > 0 && this.getComboTimeLeft() === 0) {
+            this.combo = 0;
+        }
+
         // Check achievements
         this.checkAchievements();
 
@@ -367,6 +430,10 @@ export class GameEngine {
                 unlocked = total >= threshold;
             } else if (condition === "graduations") {
                 unlocked = this.graduations >= threshold;
+            } else if (condition === "best_combo") {
+                unlocked = this.best_combo >= threshold;
+            } else if (condition === "golden_clicks") {
+                unlocked = this.golden_clicks >= threshold;
             }
 
             if (unlocked) {

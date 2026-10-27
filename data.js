@@ -455,6 +455,42 @@ export const ACHIEVEMENTS = [
         threshold: 1,
         reward_type: "global_multiplier",
         reward_value: 1.005
+    },
+    {
+        id: "combo_25",
+        name: "Combo Starter",
+        description: "Reach a 25-click combo",
+        condition: "best_combo",
+        threshold: 25,
+        reward_type: "click_power",
+        reward_value: 1.01
+    },
+    {
+        id: "combo_100",
+        name: "Combo Master",
+        description: "Reach a 100-click combo",
+        condition: "best_combo",
+        threshold: 100,
+        reward_type: "click_power",
+        reward_value: 1.02
+    },
+    {
+        id: "golden_1",
+        name: "Lucky Find",
+        description: "Catch a Golden School Badge",
+        condition: "golden_clicks",
+        threshold: 1,
+        reward_type: "global_multiplier",
+        reward_value: 1.005
+    },
+    {
+        id: "golden_10",
+        name: "Badge Hunter",
+        description: "Catch 10 Golden School Badges",
+        condition: "golden_clicks",
+        threshold: 10,
+        reward_type: "global_multiplier",
+        reward_value: 1.01
     }
 ];
 
@@ -463,5 +499,41 @@ export const PRESTIGE_CONFIG = {
     certificate_bonus: 0.1,  // +10% per certificate
     base_threshold: 1000000,  // IQ needed for first graduation
     threshold_multiplier: 2.0  // Cost increase per graduation (2x each time)
+};
+
+// Click combo: tapping quickly builds a streak that multiplies click power
+export const COMBO_CONFIG = {
+    window_ms: 1200,  // Max gap between clicks to keep the streak alive
+    tiers: [          // Highest matching tier wins
+        { min: 10, mult: 1.25 },
+        { min: 25, mult: 1.5 },
+        { min: 50, mult: 2 },
+        { min: 100, mult: 3 }
+    ]
+};
+
+// Golden School Badge: a random bonus that appears on screen
+export const GOLDEN_CONFIG = {
+    min_delay: 45,    // Seconds until the next badge appears (random range)
+    max_delay: 120,
+    lifetime: 12,     // Seconds the badge stays on screen
+    multiplier: 7,    // IQ/s multiplier while the bonus is active
+    duration: 30      // Seconds the bonus lasts
+};
+
+// Campus evolution stages, unlocked by lifetime IQ (never goes backwards)
+export const CAMPUS_STAGES = [
+    { name: "Study Corner", scene: "📖🪑✏️", threshold: 0 },
+    { name: "Classroom", scene: "🏫🌳📚", threshold: 1000 },
+    { name: "Primary School", scene: "🏫⚽🌳🚌", threshold: 100000 },
+    { name: "BISP Campus", scene: "🏫🏊🎨🌴🚌", threshold: 10000000 },
+    { name: "Grand Academy", scene: "🏛️🔬🏊🎭🌴🚀", threshold: 1000000000 },
+    { name: "Genius City", scene: "🏙️🛰️🔭🚀🌟🏛️", threshold: 100000000000 }
+];
+
+// Number milestones that trigger a small celebration
+export const MILESTONES = {
+    iq: [100, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9, 1e10, 1e11, 1e12, 1e13, 1e14, 1e15],
+    clicks: [100, 500, 1000, 5000, 10000, 50000, 100000]
 };
 
