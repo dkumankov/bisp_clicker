@@ -361,6 +361,209 @@ export const UPGRADES = [
         target: ["year11"],
         description: "2x for Year 11 students",
         requires: "stem_lab"
+    },
+
+    // Click chain (continued)
+    {
+        id: "click5",
+        name: "📖 Speed Reading",
+        cost: 1000000,
+        type: "click_power",
+        value: 5,
+        description: "5x click power",
+        requires: "click4"
+    },
+    {
+        id: "click6",
+        name: "🏛️ Memory Palace",
+        cost: 10000000,
+        type: "click_power",
+        value: 10,
+        description: "10x click power",
+        requires: "click5"
+    },
+    {
+        id: "click7",
+        name: "💻 Smart Laptop",
+        cost: 100000000,
+        type: "click_power",
+        value: 10,
+        description: "10x click power",
+        requires: "click6"
+    },
+    {
+        id: "click8",
+        name: "⚡ Lightning Reflexes",
+        cost: 2500000000,
+        type: "click_power",
+        value: 25,
+        description: "25x click power",
+        requires: "click7"
+    },
+    {
+        id: "click9",
+        name: "🤖 AI Study Buddy",
+        cost: 50000000000,
+        type: "click_power",
+        value: 50,
+        description: "50x click power",
+        requires: "click8"
+    },
+
+    // Early student upgrades (Year 1-3)
+    {
+        id: "student_early2",
+        name: "🌈 Colourful Flashcards",
+        cost: 15000,
+        type: "student_multiplier",
+        value: 2.0,
+        target: ["year1", "year3"],
+        description: "2x for early students",
+        requires: "student_eff1"
+    },
+    {
+        id: "student_early3",
+        name: "🤝 Reading Buddies",
+        cost: 150000,
+        type: "student_multiplier",
+        value: 2.0,
+        target: ["year1", "year3"],
+        description: "2x for early students",
+        requires: "student_early2"
+    },
+    {
+        id: "student_early4",
+        name: "🔤 Phonics Games",
+        cost: 750000,
+        type: "student_multiplier",
+        value: 3.0,
+        target: ["year1", "year3"],
+        description: "3x for early students",
+        requires: "student_early3"
+    },
+
+    // Middle student upgrades (Year 6-9)
+    {
+        id: "student_mid2",
+        name: "🚌 School Field Trips",
+        cost: 250000,
+        type: "student_multiplier",
+        value: 2.0,
+        target: ["year6", "year9"],
+        description: "2x for middle students",
+        requires: "student_eff2"
+    },
+    {
+        id: "student_mid3",
+        name: "📱 Learning Tablets",
+        cost: 2500000,
+        type: "student_multiplier",
+        value: 2.0,
+        target: ["year6", "year9"],
+        description: "2x for middle students",
+        requires: "student_mid2"
+    },
+    {
+        id: "student_mid4",
+        name: "🏆 House Competitions",
+        cost: 25000000,
+        type: "student_multiplier",
+        value: 3.0,
+        target: ["year6", "year9"],
+        description: "3x for middle students",
+        requires: "student_mid3"
+    },
+
+    // Senior student upgrades (Year 11-13)
+    {
+        id: "student_senior2",
+        name: "📝 Revision Guides",
+        cost: 50000000,
+        type: "student_multiplier",
+        value: 2.0,
+        target: ["year11", "year13"],
+        description: "2x for senior students",
+        requires: "student_eff3"
+    },
+    {
+        id: "student_senior3",
+        name: "🎤 Debate Society",
+        cost: 500000000,
+        type: "student_multiplier",
+        value: 2.0,
+        target: ["year11", "year13"],
+        description: "2x for senior students",
+        requires: "student_senior2"
+    },
+    {
+        id: "student_senior4",
+        name: "🎓 University Mentors",
+        cost: 5000000000,
+        type: "student_multiplier",
+        value: 3.0,
+        target: ["year11", "year13"],
+        description: "3x for senior students",
+        requires: "student_senior3"
+    },
+
+    // More science upgrades
+    {
+        id: "science3",
+        name: "📕 Science Encyclopedia",
+        cost: 75000,
+        type: "student_multiplier",
+        value: 2.0,
+        target: ["year6"],
+        description: "2x for Year 6 students",
+        requires: "mtb_library"
+    },
+    {
+        id: "science4",
+        name: "🔭 Planetarium Shows",
+        cost: 1000000000,
+        type: "student_multiplier",
+        value: 2.0,
+        target: ["year13"],
+        description: "2x for Year 13 students",
+        requires: "auditorium"
+    },
+
+    // More global upgrades
+    {
+        id: "global4",
+        name: "👨‍👩‍👧 Parent-Teacher Association",
+        cost: 100000,
+        type: "global_multiplier",
+        value: 1.15,
+        description: "+15% to all IQ generation",
+        requires: "global1"
+    },
+    {
+        id: "global5",
+        name: "⭐ Outstanding Inspection",
+        cost: 25000000,
+        type: "global_multiplier",
+        value: 1.25,
+        description: "+25% to all IQ generation",
+        requires: "global3"
+    },
+    {
+        id: "global6",
+        name: "🌏 International Partnerships",
+        cost: 500000000,
+        type: "global_multiplier",
+        value: 1.5,
+        description: "+50% to all IQ generation",
+        requires: "global5"
+    },
+    {
+        id: "global7",
+        name: "🏫 Best School in Asia",
+        cost: 10000000000,
+        type: "global_multiplier",
+        value: 2.0,
+        description: "+100% to all IQ generation",
+        requires: "global6"
     }
 ];
 
