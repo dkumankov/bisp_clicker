@@ -28,7 +28,6 @@
 
     /* Compact sticky HUD */
     .hud {
-        flex-wrap: nowrap;
         gap: 0.5rem;
         padding: 0.4rem max(0.75rem, env(safe-area-inset-right)) 0.4rem max(0.75rem, env(safe-area-inset-left));
         padding-top: calc(0.4rem + env(safe-area-inset-top));
@@ -40,14 +39,11 @@
     }
 
     .hud-stats {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.25rem;
-        justify-content: center;
+        gap: 0.2rem;
     }
 
     .hud-iq {
-        font-size: 2rem;
+        font-size: 2.2rem;
     }
 
     .hud-sub {
@@ -130,7 +126,11 @@
     }
 
     .study-text {
-        font-size: 1.5rem;
+        font-size: 0.95rem;
+    }
+
+    .study-gain b {
+        font-size: clamp(1.9rem, 9vw, 2.4rem);
     }
 
     .combo {
@@ -268,7 +268,7 @@
 /* ----- Very narrow phones (360px and below) ----- */
 @media (max-width: 380px) and (orientation: portrait) {
     .hud-iq {
-        font-size: 1.75rem;
+        font-size: 1.9rem;
     }
 
     .hud-chip-grad {
@@ -319,7 +319,6 @@
     }
 
     .hud {
-        flex-wrap: nowrap;
         gap: 0.75rem;
         padding: 0.25rem max(0.75rem, env(safe-area-inset-right)) 0.25rem max(0.75rem, env(safe-area-inset-left));
         border-bottom-width: 2px;
@@ -334,7 +333,7 @@
     }
 
     .hud-iq {
-        font-size: 1.6rem;
+        font-size: 1.7rem;
     }
 
     .hud-chip {
@@ -405,7 +404,18 @@
     }
 
     .study-text {
-        font-size: 1.2rem;
+        font-size: 0.8rem;
+        letter-spacing: 2px;
+    }
+
+    .study-gain b {
+        font-size: 1.8rem;
+    }
+
+    .study-rate {
+        min-height: 36px;
+        padding: 0.15rem 0.8rem;
+        font-size: 0.85rem;
     }
 
     .combo {

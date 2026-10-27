@@ -1,7 +1,7 @@
 import { GameEngine } from './game-engine.js?v=2';
 import { SaveManager, MIN_OFFLINE_SECONDS } from './save-manager.js?v=2';
 import { SoundManager } from './sound-manager.js?v=2';
-import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, COMBO_CONFIG, GOLDEN_CONFIG, CAMPUS_STAGES, MILESTONES } from './data.js?v=2';
+import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, COMBO_CONFIG, GOLDEN_CONFIG, CAMPUS_STAGES, MILESTONES } from './data.js?v=3';
 
 // Initialize game engine, save manager, and sound manager
 const game = new GameEngine();
@@ -59,7 +59,7 @@ function init() {
     lastIqMilestone = highestReached(MILESTONES.iq, game.lifetime_iq);
     lastClickMilestone = highestReached(MILESTONES.clicks, game.clicks);
     displayedIQ = game.iq;
-    scheduleGolden();
+    scheduleGolden(true);
 
     setupEventListeners();
     syncSoundUI();
@@ -313,28 +313,49 @@ function renderAll() {
 let lastIqText = '';
 let lastPerSecText = '';
 let lastClickText = '';
+let glowTimer = 0;
+
+/** Soft glow on the HUD IQ number while it is growing */
+function glowIq() {
+    iqDisplay.classList.add('glow');
+    clearTimeout(glowTimer);
+    glowTimer = setTimeout(() => iqDisplay.classList.remove('glow'), 450);
+}
+
+/** Short pop when a stat value changes (skipped for reduced motion) */
+function popElement(el) {
+    if (reduceMotion) return;
+    el.animate(
+        [{ transform: 'scale(1)' }, { transform: 'scale(1.3)' }, { transform: 'scale(1)' }],
+        { duration: 260, easing: 'cubic-bezier(.2,1.4,.4,1)' }
+    );
+}
 
 function updateStats() {
     // Smooth counter: snap for small numbers, ease towards the real value for big ones
     const diff = game.iq - displayedIQ;
-    if (game.iq < 1000 || Math.abs(diff) < 1) {
+    const prevIQ = displayedIQ;
+    if (Math.abs(diff) < 1) {
         displayedIQ = game.iq;
     } else {
-        displayedIQ += diff * 0.2;
+        displayedIQ += diff * 0.25;
     }
 
     // Only touch the DOM when the text really changed
     const iqText = game.formatNumber(displayedIQ);
     if (iqText !== lastIqText) {
         iqDisplay.textContent = lastIqText = iqText;
+        if (displayedIQ > prevIQ) glowIq();
     }
     const perSecText = game.formatNumber(game.iq_per_second);
     if (perSecText !== lastPerSecText) {
         iqPerSecDisplay.textContent = lastPerSecText = perSecText;
+        popElement(iqPerSecDisplay);
     }
     const clickText = '+' + game.formatNumber(game.calculateClickPower());
     if (clickText !== lastClickText) {
         clickPowerDisplay.textContent = lastClickText = clickText;
+        popElement(clickPowerDisplay);
     }
     graduationsDisplay.textContent = game.graduations;
 }
@@ -544,8 +565,10 @@ function updateCombo() {
 }
 
 // ===== Golden School Badge =====
-function scheduleGolden() {
-    const delay = GOLDEN_CONFIG.min_delay + Math.random() * (GOLDEN_CONFIG.max_delay - GOLDEN_CONFIG.min_delay);
+function scheduleGolden(first = false) {
+    const lo = first ? GOLDEN_CONFIG.first_min_delay : GOLDEN_CONFIG.min_delay;
+    const hi = first ? GOLDEN_CONFIG.first_max_delay : GOLDEN_CONFIG.max_delay;
+    const delay = lo + Math.random() * (hi - lo);
     nextGoldenAt = performance.now() + delay * 1000;
 }
 

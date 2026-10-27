@@ -70,10 +70,9 @@ button:focus-visible,
     position: sticky;
     top: 0;
     z-index: 100;
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
     align-items: center;
-    justify-content: space-between;
     gap: 0.5rem 1.5rem;
     padding: 0.6rem max(1.5rem, env(safe-area-inset-right)) 0.6rem max(1.5rem, env(safe-area-inset-left));
     padding-top: calc(0.6rem + env(safe-area-inset-top));
@@ -83,6 +82,7 @@ button:focus-visible,
 }
 
 .logo {
+    justify-self: start;
     height: 46px;
     width: auto;
     object-fit: contain;
@@ -90,34 +90,51 @@ button:focus-visible,
 
 .hud-stats {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 1.5rem;
-    flex: 1;
+    gap: 0.25rem;
     justify-content: center;
     min-width: 0;
+    text-align: center;
 }
 
 .hud-main {
     display: flex;
-    align-items: baseline;
-    gap: 0.5rem;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
 }
 
 .hud-label {
-    font-size: 0.875rem;
-    font-weight: 700;
-    letter-spacing: 1px;
-    color: var(--dark-gray);
-    opacity: 0.6;
+    font-size: 0.7rem;
+    line-height: 1;
+    font-weight: 800;
+    letter-spacing: 0.35em;
+    padding-left: 0.35em; /* balances the trailing letter-spacing */
+    color: var(--gold-dark, #b8860b);
+    opacity: 0.85;
 }
 
 .hud-iq {
     display: inline-block;
-    font-size: 2.4rem;
+    min-width: 5ch;
+    font-size: 2.8rem;
     line-height: 1;
-    font-weight: 800;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+    background: linear-gradient(180deg, var(--navy-blue) 30%, #3a5fc4);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
     color: var(--navy-blue);
     font-variant-numeric: tabular-nums;
+    will-change: transform, filter;
+    transition: filter 0.35s ease-out;
+}
+
+.hud-iq.glow {
+    filter: drop-shadow(0 0 8px rgba(255, 193, 7, 0.75));
+    transition-duration: 0.12s;
 }
 
 .hud-sub {
@@ -143,6 +160,7 @@ button:focus-visible,
 
 .hud-actions {
     display: flex;
+    justify-self: end;
     gap: 0.5rem;
 }
 
@@ -172,7 +190,7 @@ button:focus-visible,
 
 /* Active bonus bar (golden badge) */
 .buff-bar {
-    flex-basis: 100%;
+    grid-column: 1 / -1;
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -334,15 +352,72 @@ button:focus-visible,
     50% { box-shadow: 0 14px 56px rgba(245, 87, 108, 0.7), inset 0 -8px 20px rgba(0, 0, 0, 0.12); }
 }
 
+.study-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.15rem;
+}
+
 .study-text {
     position: relative;
     z-index: 1;
-    font-size: 1.7rem;
+    font-size: 1.1rem;
     font-weight: 800;
-    letter-spacing: 1px;
-    color: var(--white);
+    letter-spacing: 3px;
+    color: rgba(255, 255, 255, 0.9);
     text-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
     pointer-events: none;
+}
+
+.study-gain {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: baseline;
+    gap: 0.3rem;
+    color: var(--white);
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+    pointer-events: none;
+}
+
+.study-gain b {
+    display: inline-block;
+    font-size: 2.6rem;
+    line-height: 1;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+}
+
+.study-gain i {
+    font-style: normal;
+    font-size: 1.1rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+.study-rate {
+    padding: 0.35rem 1rem;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    border-radius: 999px;
+    background: linear-gradient(135deg, var(--light-blue), #fff);
+    border: 2px solid var(--gold);
+    box-shadow: 0 4px 14px var(--shadow);
+    color: var(--navy-blue);
+    font-size: 1rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.study-rate b {
+    display: inline-block;
+    font-size: 1.25rem;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
 }
 
 .ripple {
