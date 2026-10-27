@@ -1,7 +1,7 @@
-import { GameEngine } from './game-engine.js?v=2';
-import { SaveManager, MIN_OFFLINE_SECONDS } from './save-manager.js?v=2';
-import { SoundManager } from './sound-manager.js?v=2';
-import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, COMBO_CONFIG, GOLDEN_CONFIG, CAMPUS_STAGES, MILESTONES } from './data.js?v=3';
+import { GameEngine } from './game-engine.js?v=4';
+import { SaveManager, MIN_OFFLINE_SECONDS } from './save-manager.js?v=4';
+import { SoundManager } from './sound-manager.js?v=4';
+import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, COMBO_CONFIG, GOLDEN_CONFIG, CAMPUS_STAGES, MILESTONES } from './data.js?v=4';
 
 // Initialize game engine, save manager, and sound manager
 const game = new GameEngine();
