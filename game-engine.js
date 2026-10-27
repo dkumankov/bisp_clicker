@@ -1,4 +1,4 @@
-import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, ACHIEVEMENTS, PRESTIGE_CONFIG, COMBO_CONFIG, GOLDEN_CONFIG, CAMPUS_STAGES } from './data.js?v=5';
+import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, ACHIEVEMENTS, PRESTIGE_CONFIG, COMBO_CONFIG, GOLDEN_CONFIG, CAMPUS_STAGES } from './data.js?v=6';
 
 export class GameEngine {
     constructor() {
@@ -7,6 +7,7 @@ export class GameEngine {
         this.lifetime_iq = 0.0;  // Never resets, for prestige calculation
         this.click_power = 1.0;
         this.clicks = 0;
+        this.leaderboard_name = '';  // Player name for the leaderboard (never reset by graduation)
 
         // Buildings
         this.students = {};

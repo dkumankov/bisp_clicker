@@ -1,0 +1,14 @@
+name = "bisp-clicker-leaderboard"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+
+# Serve the API under the game's own domain (the zone must be on Cloudflare).
+routes = [
+  { pattern = "game.dimario.pro/api/*", zone_name = "dimario.pro" }
+]
+
+# Create the namespace with `wrangler kv namespace create LEADERBOARD`
+# and paste the returned id below.
+[[kv_namespaces]]
+binding = "LEADERBOARD"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"

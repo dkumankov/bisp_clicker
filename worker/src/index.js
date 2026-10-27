@@ -1,0 +1,166 @@
+// BISP Clicker leaderboard — Cloudflare Worker + KV.
+//
+// KV layout (binding: LEADERBOARD):
+//   score:<name lowercase> -> JSON {name, iq, prestige, lastSeen}
+//   lb:top                 -> JSON array with the top entries (served by GET /leaderboard)
+//   rl:<ip>                -> timestamp (ms) of the last accepted write from that IP
+//
+// Routes (also reachable under the /api prefix, e.g. game.dimario.pro/api/score):
+//   POST /score        {name, iq, prestige}
+//   GET  /leaderboard
+
+// ===== Tunables =====
+const ALLOWED_ORIGINS = ['https://game.dimario.pro'];
+const LOCALHOST_RE = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
+
+const TOP_SIZE = 50;
+const NAME_MIN = 1;
+const NAME_MAX = 24;
+const NAME_RE = /^[\p{L}\p{N} ]+$/u;     // letters, digits and spaces only (no emoji)
+
+const MAX_IQ = 1e21;                     // Hard ceiling for any submitted IQ
+const MAX_PRESTIGE = 100000;
+// Highest believable IQ gain per second. A guess, not a measurement: tune it
+// once real top-player numbers are known. It is intentionally generous.
+const MAX_IQ_PER_SEC = 10_000_000;
+// Flat allowance on top of the per-second ceiling (golden badges, rounding, the
+// game's offline-progress credit is covered by MAX_ELAPSED_SECONDS below).
+const IQ_GAIN_SLACK = 1_000_000;
+// The game credits at most 24 h of offline progress, so never allow more.
+const MAX_ELAPSED_SECONDS = 86400;
+
+const RATE_LIMIT_MS = 30_000;            // 1 accepted write per IP per 30 s
+const RATE_LIMIT_TTL_S = 60;             // KV minimum expirationTtl
+
+export default {
+  async fetch(request, env) {
+    const origin = request.headers.get('Origin');
+    const cors = corsHeaders(origin);
+
+    if (request.method === 'OPTIONS') {
+      return new Response(null, { status: 204, headers: cors });
+    }
+
+    // Browsers always send Origin on cross-origin POSTs; refuse unknown ones.
+    if (origin && !cors['Access-Control-Allow-Origin']) {
+      return json({ error: 'forbidden origin' }, 403, cors);
+    }
+
+    const path = new URL(request.url).pathname.replace(/^\/api(?=\/)/, '').replace(/\/+$/, '');
+
+    try {
+      if (path === '/leaderboard' && request.method === 'GET') {
+        return await handleLeaderboard(env, cors);
+      }
+      if (path === '/score' && request.method === 'POST') {
+        return await handleScore(request, env, cors);
+      }
+      return json({ error: 'not found' }, 404, cors);
+    } catch (err) {
+      console.error(err);
+      return json({ error: 'internal error' }, 500, cors);
+    }
+  }
+};
+
+// ===== Handlers =====
+
+async function handleLeaderboard(env, cors) {
+  const top = (await env.LEADERBOARD.get('lb:top', 'json')) || [];
+  return json(top.slice(0, TOP_SIZE), 200, { ...cors, 'Cache-Control': 'public, max-age=15' });
+}
+
+async function handleScore(request, env, cors) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: 'invalid json' }, 400, cors);
+  }
+
+  const entry = validate(body);
+  if (!entry) return json({ error: 'invalid payload' }, 400, cors);
+
+  // Rate limit per IP
+  const now = Date.now();
+  const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+  const rlKey = 'rl:' + ip;
+  const lastWrite = Number(await env.LEADERBOARD.get(rlKey)) || 0;
+  if (now - lastWrite < RATE_LIMIT_MS) {
+    const retryAfter = Math.ceil((RATE_LIMIT_MS - (now - lastWrite)) / 1000);
+    return json({ error: 'rate limited' }, 429, { ...cors, 'Retry-After': String(retryAfter) });
+  }
+
+  const key = 'score:' + entry.name.toLowerCase();
+  const prev = await env.LEADERBOARD.get(key, 'json');
+
+  if (prev) {
+    // Plausibility: the gain must fit in the time since the last accepted write.
+    // Elapsed time is measured by the server (lastSeen), so the client cannot lie about it.
+    const elapsed = Math.min((now - prev.lastSeen) / 1000, MAX_ELAPSED_SECONDS);
+    const maxGain = elapsed * MAX_IQ_PER_SEC + IQ_GAIN_SLACK;
+    if (entry.iq - prev.iq > maxGain) {
+      return json({ error: 'implausible score' }, 422, cors);
+    }
+  }
+
+  // Keep the personal best; lower values only refresh lastSeen and prestige.
+  const saved = {
+    name: entry.name,
+    iq: prev ? Math.max(prev.iq, entry.iq) : entry.iq,
+    prestige: prev ? Math.max(prev.prestige, entry.prestige) : entry.prestige,
+    lastSeen: now
+  };
+
+  await env.LEADERBOARD.put(key, JSON.stringify(saved));
+  await env.LEADERBOARD.put(rlKey, String(now), { expirationTtl: RATE_LIMIT_TTL_S });
+  await updateTop(env, saved);
+
+  return json({ ok: true, iq: saved.iq, prestige: saved.prestige }, 200, cors);
+}
+
+// ===== Helpers =====
+
+/** Return a clean {name, iq, prestige} or null when the payload is not acceptable */
+function validate(body) {
+  if (!body || typeof body !== 'object') return null;
+  const { name, iq, prestige } = body;
+
+  if (typeof name !== 'string') return null;
+  const trimmed = name.trim().replace(/\s+/g, ' ');
+  if (trimmed.length < NAME_MIN || trimmed.length > NAME_MAX || !NAME_RE.test(trimmed)) return null;
+
+  if (!Number.isInteger(iq) || iq < 0 || iq > MAX_IQ) return null;
+  if (!Number.isInteger(prestige) || prestige < 0 || prestige > MAX_PRESTIGE) return null;
+
+  return { name: trimmed, iq, prestige };
+}
+
+/** Merge one entry into the cached top list (read-modify-write; races only cost a stale row) */
+async function updateTop(env, entry) {
+  const top = (await env.LEADERBOARD.get('lb:top', 'json')) || [];
+  const lowered = entry.name.toLowerCase();
+  const next = top.filter(e => e.name.toLowerCase() !== lowered);
+  next.push(entry);
+  next.sort((a, b) => b.iq - a.iq);
+  await env.LEADERBOARD.put('lb:top', JSON.stringify(next.slice(0, TOP_SIZE)));
+}
+
+function corsHeaders(origin) {
+  const allowed = origin && (ALLOWED_ORIGINS.includes(origin) || LOCALHOST_RE.test(origin));
+  const headers = {
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Max-Age': '86400',
+    'Vary': 'Origin'
+  };
+  if (allowed) headers['Access-Control-Allow-Origin'] = origin;
+  return headers;
+}
+
+function json(data, status, headers = {}) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { 'Content-Type': 'application/json', ...headers }
+  });
+}

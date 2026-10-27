@@ -557,3 +557,15 @@
         gap: 0;
     }
 }
+
+/* Leaderboard modal: fill the screen on phones, respect the notch / home bar */
+@media (max-width: 600px) {
+    .lb-content {
+        height: 100%;
+        padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    }
+
+    .lb-row {
+        padding: 0.45rem 0.35rem;
+    }
+}

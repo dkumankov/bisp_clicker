@@ -41,6 +41,7 @@ export class SaveManager {
             graduations: gameEngine.graduations,
             best_combo: gameEngine.best_combo,
             golden_clicks: gameEngine.golden_clicks,
+            leaderboard_name: gameEngine.leaderboard_name,
             last_save_time: Date.now(),
             // Steady rate without temporary events, so bonuses don't inflate offline progress
             iq_per_second: gameEngine.calculateIQPerSecond(false)
@@ -84,6 +85,7 @@ export class SaveManager {
             gameEngine.graduations = num(saveData.graduations);
             gameEngine.best_combo = num(saveData.best_combo);      // Missing in v1 saves
             gameEngine.golden_clicks = num(saveData.golden_clicks);  // Missing in v1 saves
+            gameEngine.leaderboard_name = typeof saveData.leaderboard_name === 'string' ? saveData.leaderboard_name : '';  // Missing in older saves
             result.loaded = true;
 
             // Calculate offline progress

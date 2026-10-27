@@ -539,3 +539,7 @@ export const MILESTONES = {
     clicks: [100, 500, 1000, 5000, 10000, 50000, 100000]
 };
 
+
+// Leaderboard API (Cloudflare Worker routed at game.dimario.pro/api/*).
+// For local worker dev use 'http://localhost:8787'.
+export const LEADERBOARD_API = 'https://game.dimario.pro/api';

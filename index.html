@@ -11,8 +11,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=5">
-    <link rel="stylesheet" href="mobile.css?v=5">
+    <link rel="stylesheet" href="style.css?v=6">
+    <link rel="stylesheet" href="mobile.css?v=6">
 </head>
 
 <body>
@@ -32,6 +32,7 @@
             </div>
 
             <div class="hud-actions">
+                <button class="icon-button" id="leaderboard-button" aria-label="Leaderboard">🏆</button>
                 <button class="icon-button" id="settings-button" aria-label="Settings">⚙️</button>
             </div>
 
@@ -157,6 +158,17 @@
                 </label>
             </div>
 
+            <div class="settings-block">
+                <label class="settings-name" for="name-settings-input">Player name</label>
+                <div class="settings-hint">Shown on the leaderboard</div>
+                <div class="name-edit">
+                    <input class="text-input" id="name-settings-input" type="text" maxlength="24" autocomplete="off" autocapitalize="words" spellcheck="false">
+                    <button class="modal-button" id="name-save">Save</button>
+                </div>
+                <div class="field-error" id="name-settings-error" role="alert"></div>
+                <button class="modal-button secondary settings-lb-button" id="settings-leaderboard-button">🏆 Leaderboard</button>
+            </div>
+
             <div class="settings-about">
                 <div class="settings-name">About</div>
                 <p>BISP Clicker, created by Dima Kumankov (Year 3, class 3PW) with AI and Dad.</p>
@@ -185,7 +197,36 @@
         </div>
     </div>
 
-    <script type="module" src="app.js?v=5"></script>
+    <!-- First-run name prompt -->
+    <div class="modal modal-confirm hidden" id="name-modal" role="dialog" aria-modal="true" aria-labelledby="name-title">
+        <form class="modal-content" id="name-form" novalidate>
+            <div class="modal-emoji">🎓</div>
+            <h2 id="name-title">Enter your name</h2>
+            <p>Your name appears on the leaderboard. You can change it later in Settings.</p>
+            <input class="text-input" id="name-input" type="text" maxlength="24" autocomplete="off" autocapitalize="words" spellcheck="false" placeholder="Your name" aria-label="Your name">
+            <div class="field-error" id="name-error" role="alert"></div>
+            <button class="modal-button" type="submit">Let's go!</button>
+        </form>
+    </div>
+
+    <!-- Leaderboard Modal -->
+    <div class="modal hidden" id="leaderboard-modal" role="dialog" aria-modal="true" aria-labelledby="lb-title">
+        <div class="modal-content lb-content">
+            <button class="modal-close" id="close-leaderboard" aria-label="Close leaderboard">✕</button>
+            <h2 id="lb-title">🏆 Leaderboard</h2>
+            <div class="lb-sort" role="group" aria-label="Sort by">
+                <button class="lb-sort-btn active" id="lb-sort-iq" aria-pressed="true">IQ</button>
+                <button class="lb-sort-btn" id="lb-sort-prestige" aria-pressed="false">Graduations</button>
+            </div>
+            <ol class="lb-list" id="lb-list"></ol>
+            <div class="lb-error hidden" id="lb-error">
+                <p>Leaderboard unavailable</p>
+                <button class="modal-button" id="lb-retry">Try again</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="app.js?v=6"></script>
 </body>
 
 </html>

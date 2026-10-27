@@ -1,7 +1,8 @@
-import { GameEngine } from './game-engine.js?v=5';
-import { SaveManager, MIN_OFFLINE_SECONDS } from './save-manager.js?v=5';
-import { SoundManager } from './sound-manager.js?v=5';
-import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, COMBO_CONFIG, GOLDEN_CONFIG, CAMPUS_STAGES, MILESTONES } from './data.js?v=5';
+import { GameEngine } from './game-engine.js?v=6';
+import { SaveManager, MIN_OFFLINE_SECONDS } from './save-manager.js?v=6';
+import { SoundManager } from './sound-manager.js?v=6';
+import { fetchLeaderboard, postScore, validateName, cleanName, timeAgo, SUBMIT_INTERVAL_MS } from './leaderboard.js?v=6';
+import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, COMBO_CONFIG, GOLDEN_CONFIG, CAMPUS_STAGES, MILESTONES } from './data.js?v=6';
 
 // Initialize game engine, save manager, and sound manager
 const game = new GameEngine();
@@ -62,6 +63,7 @@ function init() {
     scheduleGolden(true);
 
     setupEventListeners();
+    setupLeaderboard();
     syncSoundUI();
     renderAll();
     updateCampus(true);
@@ -69,6 +71,8 @@ function init() {
     if (loadResult.offlineIQ > 0) {
         showOfflineProgress(loadResult.offlineIQ, loadResult.offlineSeconds);
     }
+
+    if (!game.leaderboard_name) openNameModal();
 
     requestAnimationFrame(gameLoop);
 
@@ -138,6 +142,8 @@ function setupEventListeners() {
     document.addEventListener('keydown', (e) => {
         if (e.key !== 'Escape') return;
         if ($('confirm-modal').classList.contains('open')) $('confirm-cancel').click();
+        else if ($('name-modal').classList.contains('open')) return;  // Name is required on first run
+        else if ($('leaderboard-modal').classList.contains('open')) closeModal($('leaderboard-modal'));
         else if ($('settings-modal').classList.contains('open')) closeModal($('settings-modal'));
         else if ($('offline-modal').classList.contains('open')) closeModal($('offline-modal'));
         else setSheetOpen(false);
@@ -146,19 +152,20 @@ function setupEventListeners() {
         modal.addEventListener('pointerdown', (e) => {
             if (e.target !== modal) return;
             if (modal.id === 'confirm-modal') $('confirm-cancel').click();
-            else closeModal(modal);
+            else if (modal.id !== 'name-modal') closeModal(modal);
         });
     });
 
     // Save when the player leaves, and award progress for time spent in the background
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('pagehide', () => saveManager.saveGame(game));
+    window.addEventListener('pagehide', () => { saveManager.saveGame(game); submitScore(); });
 }
 
 function handleVisibilityChange() {
     if (document.hidden) {
         hiddenAt = Date.now();
         saveManager.saveGame(game);
+        submitScore();
         return;
     }
     lastFrameTime = performance.now();
@@ -963,6 +970,8 @@ function confirmDialog({ emoji, title, text, okLabel = 'OK', cancelLabel = 'Canc
 function openSettings() {
     $('stat-best-combo').textContent = game.best_combo;
     $('stat-golden').textContent = game.golden_clicks;
+    $('name-settings-input').value = game.leaderboard_name;
+    $('name-settings-error').textContent = '';
     $('settings-modal').querySelector('.modal-content').scrollTop = 0;
     openModal($('settings-modal'));
 }
@@ -1020,6 +1029,156 @@ async function handleGraduate() {
     showToast({ key: 'graduate', icon: '🎓', kind: 'gold', title: 'Congratulations, graduate!' });
     burst(window.innerWidth / 2, window.innerHeight * 0.3, 40, ['🎓', '🎉', '🎊', '⭐', '✨'], Math.min(window.innerWidth / 2, 260), 120);
     renderAll();
+    submitScore();
+}
+
+// ===== Leaderboard =====
+let lastSubmittedIq = -1;   // Last IQ the server accepted
+let submitting = false;
+let lbEntries = [];
+let lbSortBy = 'iq';
+
+/** Lifetime IQ is the ranking value: it never drops when the player graduates */
+function scoreIq() {
+    return Math.floor(game.lifetime_iq);
+}
+
+/** Send the score; unchanged IQ and a missing name are skipped unless forced */
+async function submitScore(force = false) {
+    const name = game.leaderboard_name;
+    const iq = scoreIq();
+    if (!name || submitting || (!force && iq === lastSubmittedIq)) return;
+    submitting = true;
+    const ok = await postScore(name, iq, game.graduations);
+    submitting = false;
+    if (ok) lastSubmittedIq = iq;
+}
+
+function setupLeaderboard() {
+    setInterval(() => { if (!document.hidden) submitScore(); }, SUBMIT_INTERVAL_MS);
+
+    // First-run name prompt
+    $('name-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const error = validateName($('name-input').value);
+        $('name-error').textContent = error || '';
+        if (error) return;
+        setPlayerName($('name-input').value);
+        closeModal($('name-modal'));
+    });
+
+    // Rename from settings
+    $('name-save').addEventListener('click', () => {
+        const input = $('name-settings-input');
+        const error = validateName(input.value);
+        $('name-settings-error').textContent = error || '';
+        if (error) return;
+        setPlayerName(input.value);
+        input.value = game.leaderboard_name;
+        showToast({ key: 'name', icon: '✓', title: 'Name saved' });
+    });
+
+    // Leaderboard screen
+    $('leaderboard-button').addEventListener('click', openLeaderboard);
+    $('settings-leaderboard-button').addEventListener('click', openLeaderboard);
+    $('close-leaderboard').addEventListener('click', () => closeModal($('leaderboard-modal')));
+    $('lb-retry').addEventListener('click', loadLeaderboard);
+    $('lb-sort-iq').addEventListener('click', () => setLbSort('iq'));
+    $('lb-sort-prestige').addEventListener('click', () => setLbSort('prestige'));
+}
+
+function setPlayerName(raw) {
+    game.leaderboard_name = cleanName(raw);
+    saveManager.saveGame(game);
+    lastSubmittedIq = -1;  // A new name needs a fresh record
+    submitScore(true);
+}
+
+function openNameModal() {
+    $('name-error').textContent = '';
+    openModal($('name-modal'), $('name-input'));
+}
+
+function openLeaderboard() {
+    openModal($('leaderboard-modal'));
+    $('leaderboard-modal').querySelector('.modal-content').scrollTop = 0;
+    loadLeaderboard();
+}
+
+async function loadLeaderboard() {
+    const list = $('lb-list');
+    $('lb-error').classList.add('hidden');
+    list.classList.remove('hidden');
+    list.setAttribute('aria-busy', 'true');
+    list.innerHTML = Array.from({ length: 8 }, () => '<li class="lb-row lb-skeleton"><span></span></li>').join('');
+
+    // Make sure the player's own latest score is on the board when it is fetched
+    await submitScore();
+    try {
+        lbEntries = await fetchLeaderboard();
+        renderLeaderboard();
+    } catch (e) {
+        console.error('Leaderboard failed:', e);
+        list.classList.add('hidden');
+        $('lb-error').classList.remove('hidden');
+        showToast({ key: 'lb-error', icon: '⚠️', title: 'Leaderboard unavailable' });
+    } finally {
+        list.removeAttribute('aria-busy');
+    }
+}
+
+function setLbSort(by) {
+    lbSortBy = by;
+    $('lb-sort-iq').classList.toggle('active', by === 'iq');
+    $('lb-sort-prestige').classList.toggle('active', by === 'prestige');
+    $('lb-sort-iq').setAttribute('aria-pressed', String(by === 'iq'));
+    $('lb-sort-prestige').setAttribute('aria-pressed', String(by === 'prestige'));
+    renderLeaderboard();
+}
+
+function renderLeaderboard() {
+    const list = $('lb-list');
+    list.textContent = '';
+    if (lbEntries.length === 0) {
+        const li = document.createElement('li');
+        li.className = 'lb-empty';
+        li.textContent = 'No scores yet. Be the first!';
+        list.appendChild(li);
+        return;
+    }
+
+    const me = game.leaderboard_name.toLowerCase();
+    const primary = lbSortBy === 'iq' ? 'iq' : 'prestige';
+    const secondary = primary === 'iq' ? 'prestige' : 'iq';
+    const sorted = [...lbEntries].sort((a, b) => (b[primary] - a[primary]) || (b[secondary] - a[secondary]));
+
+    sorted.forEach((entry, i) => {
+        const li = document.createElement('li');
+        li.className = 'lb-row' + (entry.name.toLowerCase() === me ? ' me' : '');
+
+        const rank = document.createElement('span');
+        rank.className = 'lb-rank';
+        rank.textContent = ['🥇', '🥈', '🥉'][i] || String(i + 1);
+
+        const who = document.createElement('span');
+        who.className = 'lb-who';
+        const nameEl = document.createElement('b');
+        nameEl.textContent = entry.name;  // textContent: names are user input
+        const seen = document.createElement('small');
+        seen.textContent = 'last seen ' + timeAgo(entry.lastSeen);
+        who.append(nameEl, seen);
+
+        const stats = document.createElement('span');
+        stats.className = 'lb-stats';
+        const iq = document.createElement('b');
+        iq.textContent = game.formatNumber(entry.iq) + ' IQ';
+        const grad = document.createElement('small');
+        grad.textContent = '🎓 ' + entry.prestige;
+        stats.append(iq, grad);
+
+        li.append(rank, who, stats);
+        list.appendChild(li);
+    });
 }
 
 // ===== Offline Progress =====
