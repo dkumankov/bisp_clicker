@@ -559,11 +559,14 @@
     }
 }
 
-/* Leaderboard modal: fill the screen on phones, respect the notch / home bar */
+/* Leaderboard modal: centered card with air around it, safe-area aware */
 @media (max-width: 600px) {
+    #leaderboard-modal {
+        padding: max(1.25rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(1.25rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+    }
+
     .lb-content {
-        height: 100%;
-        padding-bottom: max(1rem, env(safe-area-inset-bottom));
+        padding: 1.25rem 1rem max(1rem, env(safe-area-inset-bottom));
     }
 
     .lb-row {

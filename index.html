@@ -11,8 +11,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=8">
-    <link rel="stylesheet" href="mobile.css?v=8">
+    <link rel="stylesheet" href="style.css?v=9">
+    <link rel="stylesheet" href="mobile.css?v=9">
 </head>
 
 <body>
@@ -235,13 +235,15 @@
             </div>
             <ol class="lb-list" id="lb-list"></ol>
             <div class="lb-error hidden" id="lb-error">
-                <p>Leaderboard unavailable</p>
+                <div class="lb-error-icon" aria-hidden="true">📡</div>
+                <h3>Leaderboard unavailable</h3>
+                <p>Check your internet connection and try again</p>
                 <button class="modal-button" id="lb-retry">Try again</button>
             </div>
         </div>
     </div>
 
-    <script type="module" src="app.js?v=8"></script>
+    <script type="module" src="app.js?v=9"></script>
 </body>
 
 </html>

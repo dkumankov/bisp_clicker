@@ -1,8 +1,8 @@
-import { GameEngine } from './game-engine.js?v=8';
-import { SaveManager, MIN_OFFLINE_SECONDS } from './save-manager.js?v=8';
-import { SoundManager } from './sound-manager.js?v=8';
-import { fetchLeaderboard, postScore, validateName, cleanName, timeAgo, SUBMIT_INTERVAL_MS } from './leaderboard.js?v=8';
-import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, COMBO_CONFIG, GOLDEN_CONFIG, CAMPUS_STAGES, MILESTONES } from './data.js?v=8';
+import { GameEngine } from './game-engine.js?v=9';
+import { SaveManager, MIN_OFFLINE_SECONDS } from './save-manager.js?v=9';
+import { SoundManager } from './sound-manager.js?v=9';
+import { fetchLeaderboard, postScore, validateName, cleanName, timeAgo, SUBMIT_INTERVAL_MS } from './leaderboard.js?v=9';
+import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, COMBO_CONFIG, GOLDEN_CONFIG, CAMPUS_STAGES, MILESTONES } from './data.js?v=9';
 
 // Initialize game engine, save manager, and sound manager
 const game = new GameEngine();
@@ -1126,7 +1126,7 @@ function setupLeaderboard() {
     $('leaderboard-button').addEventListener('click', openLeaderboard);
     $('settings-leaderboard-button').addEventListener('click', openLeaderboard);
     $('close-leaderboard').addEventListener('click', () => closeModal($('leaderboard-modal')));
-    $('lb-retry').addEventListener('click', loadLeaderboard);
+    $('lb-retry').addEventListener('click', () => loadLeaderboard());
     $('lb-sort-iq').addEventListener('click', () => setLbSort('iq'));
     $('lb-sort-prestige').addEventListener('click', () => setLbSort('prestige'));
 }
@@ -1149,7 +1149,11 @@ function openLeaderboard() {
     loadLeaderboard();
 }
 
-async function loadLeaderboard() {
+const LB_RETRY_DELAY_MS = 2500;
+let lbRetryTimer = null;
+
+async function loadLeaderboard(autoRetry = true) {
+    clearTimeout(lbRetryTimer);
     const list = $('lb-list');
     $('lb-error').classList.add('hidden');
     list.classList.remove('hidden');
@@ -1163,9 +1167,15 @@ async function loadLeaderboard() {
         renderLeaderboard();
     } catch (e) {
         console.error('Leaderboard failed:', e);
+        if (autoRetry) {
+            // One quiet retry while the skeleton stays on screen
+            lbRetryTimer = setTimeout(() => {
+                if ($('leaderboard-modal').classList.contains('open')) loadLeaderboard(false);
+            }, LB_RETRY_DELAY_MS);
+            return;
+        }
         list.classList.add('hidden');
         $('lb-error').classList.remove('hidden');
-        showToast({ key: 'lb-error', icon: '⚠️', title: 'Leaderboard unavailable' });
     } finally {
         list.removeAttribute('aria-busy');
     }

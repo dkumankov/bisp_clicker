@@ -1302,14 +1302,30 @@ button:focus-visible,
 .lb-content {
     display: flex;
     flex-direction: column;
-    width: min(100%, 520px);
-    height: min(100%, 680px);
+    width: min(100%, 560px);
+    height: auto;
+    max-height: 85vh;
+    max-height: min(85dvh, 680px);
+    overflow: hidden;
     text-align: left;
-    -webkit-overflow-scrolling: touch;
 }
 
 .lb-content h2 {
+    flex: none;
+    padding: 0 2.75rem;
     text-align: center;
+}
+
+.lb-content .modal-close {
+    top: 12px;
+    right: 12px;
+}
+
+.lb-content .lb-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .lb-sort {
@@ -1414,10 +1430,32 @@ button:focus-visible,
     to { background-position: -200% 0; }
 }
 
-.lb-empty,
-.lb-error {
+.lb-empty {
     padding: 1.5rem 0;
     text-align: center;
+}
+
+.lb-error {
+    flex: none;
+    padding: 1rem 0 0.5rem;
+    text-align: center;
+}
+
+.lb-error-icon {
+    font-size: 2.5rem;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+}
+
+.lb-error h3 {
+    margin-bottom: 0.25rem;
+    color: var(--navy-blue);
+}
+
+.lb-error p {
+    margin-bottom: 1rem;
+    color: #5a6a85;
+    font-size: 0.9rem;
 }
 
 .lb-error .modal-button {
