@@ -1,7 +1,7 @@
-import { GameEngine } from './game-engine.js';
-import { SaveManager, MIN_OFFLINE_SECONDS } from './save-manager.js';
-import { SoundManager } from './sound-manager.js';
-import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, COMBO_CONFIG, GOLDEN_CONFIG, CAMPUS_STAGES, MILESTONES } from './data.js';
+import { GameEngine } from './game-engine.js?v=2';
+import { SaveManager, MIN_OFFLINE_SECONDS } from './save-manager.js?v=2';
+import { SoundManager } from './sound-manager.js?v=2';
+import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, COMBO_CONFIG, GOLDEN_CONFIG, CAMPUS_STAGES, MILESTONES } from './data.js?v=2';
 
 // Initialize game engine, save manager, and sound manager
 const game = new GameEngine();
@@ -751,7 +751,11 @@ function checkAchievements() {
 }
 
 // ===== Modals =====
+// Modals ship with `hidden` so they stay invisible even if a stale cached stylesheet
+// (e.g. v1 CSS, where .modal is always displayed) is paired with the new HTML.
 function openModal(modal, focusEl) {
+    modal.classList.remove('hidden');
+    void modal.offsetWidth;  // Reflow so the fade-in transition still runs
     modal.classList.add('open');
     document.body.classList.add('modal-open');
     if (focusEl) focusEl.focus({ preventScroll: true });
@@ -759,6 +763,7 @@ function openModal(modal, focusEl) {
 
 function closeModal(modal) {
     modal.classList.remove('open');
+    modal.classList.add('hidden');
     if (!document.querySelector('.modal.open')) {
         document.body.classList.remove('modal-open');
     }
@@ -821,20 +826,20 @@ function syncSoundUI() {
 async function handleReset() {
     const first = await confirmDialog({
         emoji: '⚠️',
-        title: 'Сброс прогресса',
-        text: 'Это сотрёт ВСЁ, включая престиж. Уверен?',
-        okLabel: 'Да, стереть',
-        cancelLabel: 'Отмена',
+        title: 'Reset progress',
+        text: 'This will erase EVERYTHING, including prestige. Are you sure?',
+        okLabel: 'Yes, erase it',
+        cancelLabel: 'Cancel',
         danger: true
     });
     if (!first) return;
 
     const second = await confirmDialog({
         emoji: '🛑',
-        title: 'Последнее предупреждение',
-        text: 'Точно? Отмена будет невозможно',
-        okLabel: 'Стереть навсегда',
-        cancelLabel: 'Отмена',
+        title: 'Final warning',
+        text: 'Really sure? This cannot be undone.',
+        okLabel: 'Erase forever',
+        cancelLabel: 'Cancel',
         danger: true,
         lockMs: 1500
     });
