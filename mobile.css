@@ -38,8 +38,20 @@
         display: none;
     }
 
+    /* Equal side tracks keep IQ at the exact screen centre */
+    .hud {
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    }
+
     .hud-stats {
+        grid-column: 2;
+        grid-row: 1;
         gap: 0.2rem;
+    }
+
+    .hud-actions {
+        grid-column: 3;
+        grid-row: 1;
     }
 
     .hud-iq {
@@ -99,16 +111,18 @@
 
     .campus-name {
         margin-top: 0.1rem;
-        font-size: 0.95rem;
+        font-size: 1.15rem;
     }
 
     .campus-progress {
-        margin-top: 0.25rem;
-        height: 6px;
+        margin-top: 0.35rem;
+        height: 12px;
     }
 
     .campus-next {
-        font-size: 0.7rem;
+        margin-top: 0.4rem;
+        padding: 0.25rem 0.8rem;
+        font-size: 0.75rem;
     }
 
     .graduate-button {
@@ -183,6 +197,37 @@
         border: none;
         background: transparent;
         cursor: pointer;
+        /* Swipes on the handle belong to the sheet, not the browser */
+        touch-action: none;
+    }
+
+    /* Swipe-to-dismiss: sheet follows the finger, no CSS transitions fight the drag */
+    .shop.sheet-dragging {
+        transition: none;
+        will-change: transform;
+    }
+
+    .shop.sheet-dragging .content-panel,
+    .shop.sheet-snap .content-panel {
+        transition: none;
+    }
+
+    .sheet-scrim {
+        touch-action: none;
+    }
+
+    /* Extend the hit area upward to a 44px tap zone without changing the layout */
+    .sheet-handle {
+        position: relative;
+    }
+
+    .sheet-handle::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 44px;
     }
 
     .sheet-grip {
@@ -224,6 +269,8 @@
         max-height: none;
         padding: 0 0.75rem;
         transition: height 0.35s cubic-bezier(0.2, 0.9, 0.3, 1), padding 0.35s;
+        /* Don't chain scroll/pull-to-refresh into the page; swipe-dismiss is handled in JS */
+        overscroll-behavior: contain;
     }
 
     .shop.open .content-panel {
@@ -382,13 +429,13 @@
     }
 
     .campus-name {
-        font-size: 0.85rem;
+        font-size: 0.95rem;
         margin-top: 0;
     }
 
     .campus-progress {
         margin-top: 0.2rem;
-        height: 5px;
+        height: 10px;
     }
 
     .campus-next {

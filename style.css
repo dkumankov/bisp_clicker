@@ -118,6 +118,7 @@ button:focus-visible,
 .hud-iq {
     display: inline-block;
     min-width: 5ch;
+    white-space: nowrap;
     font-size: 2.8rem;
     line-height: 1;
     font-weight: 900;
@@ -182,10 +183,6 @@ button:focus-visible,
 
 .icon-button:active {
     transform: scale(0.92);
-}
-
-.icon-button.muted {
-    opacity: 0.55;
 }
 
 /* Active bonus bar (golden badge) */
@@ -289,34 +286,77 @@ button:focus-visible,
 .campus-name {
     margin-top: 0.3rem;
     text-align: center;
-    font-weight: 800;
-    font-size: 1.05rem;
+    font-weight: 900;
+    font-size: 1.3rem;
+    letter-spacing: 0.01em;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 .campus-progress {
-    margin-top: 0.4rem;
-    height: 8px;
-    border-radius: 4px;
-    background: rgba(0, 0, 0, 0.25);
-    overflow: hidden;
+    position: relative;
+    margin-top: 0.5rem;
+    height: 14px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.3);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.35), 0 0 0 2px rgba(255, 255, 255, 0.25);
 }
 
 .campus-progress span {
+    position: relative;
     display: block;
     height: 100%;
     width: 0;
-    background: var(--gold);
-    border-radius: 4px;
-    transition: width 0.4s;
+    min-width: 14px;
+    max-width: 100%;
+    overflow: hidden;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #ffd600, #ff9100 60%, #ff5e3a);
+    box-shadow: 0 0 10px rgba(255, 193, 7, 0.85), 0 0 22px rgba(255, 145, 0, 0.45);
+    transition: width 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* shimmer sweeping over the filled part */
+.campus-progress span::after {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 45%;
+    background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.75), transparent);
+    transform: translateX(-120%);
+    animation: barShimmer 2.2s ease-in-out infinite;
+}
+
+@keyframes barShimmer {
+    to { transform: translateX(320%); }
+}
+
+.campus-progress.stage-up {
+    animation: barPop 0.9s ease-out;
+}
+
+@keyframes barPop {
+    0% { transform: scaleY(1); filter: brightness(1); }
+    30% { transform: scaleY(1.7); filter: brightness(1.5) drop-shadow(0 0 10px #ffd600); }
+    100% { transform: scaleY(1); filter: brightness(1); }
 }
 
 .campus-next {
-    margin-top: 0.3rem;
+    display: block;
+    width: fit-content;
+    max-width: 100%;
+    margin: 0.55rem auto 0;
+    padding: 0.3rem 0.9rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.92);
+    color: #5b2bbf;
     text-align: center;
-    font-size: 0.75rem;
-    font-weight: 600;
-    opacity: 0.9;
+    text-shadow: none;
+    font-size: 0.85rem;
+    font-weight: 800;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
+
+.campus-next:empty { display: none; }
 
 /* ===== Study button, combo ===== */
 .study-section {

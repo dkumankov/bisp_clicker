@@ -1,7 +1,7 @@
-import { GameEngine } from './game-engine.js?v=4';
-import { SaveManager, MIN_OFFLINE_SECONDS } from './save-manager.js?v=4';
-import { SoundManager } from './sound-manager.js?v=4';
-import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, COMBO_CONFIG, GOLDEN_CONFIG, CAMPUS_STAGES, MILESTONES } from './data.js?v=4';
+import { GameEngine } from './game-engine.js?v=5';
+import { SaveManager, MIN_OFFLINE_SECONDS } from './save-manager.js?v=5';
+import { SoundManager } from './sound-manager.js?v=5';
+import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, COMBO_CONFIG, GOLDEN_CONFIG, CAMPUS_STAGES, MILESTONES } from './data.js?v=5';
 
 // Initialize game engine, save manager, and sound manager
 const game = new GameEngine();
@@ -116,6 +116,7 @@ function setupEventListeners() {
     $('sheet-handle').addEventListener('click', () => setSheetOpen(!shop.classList.contains('open')));
     sheetScrim.addEventListener('click', () => setSheetOpen(false));
     sheetQuery.addEventListener('change', () => setSheetOpen(false));
+    setupSheetSwipe();
 
     graduateButton.addEventListener('click', handleGraduate);
     goldenBadge.addEventListener('pointerdown', handleGoldenCatch);
@@ -126,12 +127,7 @@ function setupEventListeners() {
     $('close-settings').addEventListener('click', () => closeModal($('settings-modal')));
     $('reset-button').addEventListener('click', handleReset);
 
-    // Sound toggles (HUD button and settings switch stay in sync)
-    $('sound-toggle').addEventListener('click', () => {
-        soundManager.toggle();
-        syncSoundUI();
-        soundManager.playTab();
-    });
+    // Sound switch lives in the settings modal
     $('sound-switch').addEventListener('change', (e) => {
         soundManager.setEnabled(e.target.checked);
         syncSoundUI();
@@ -284,6 +280,118 @@ function setSheetOpen(open) {
     document.body.classList.toggle('sheet-open', open);
 }
 
+// Swipe-to-dismiss for the bottom sheet. Drag starts from the grab handle, tabs,
+// scrim, or the content panel when it is scrolled to the top and pulled down.
+function setupSheetSwipe() {
+    const SLOP = 8;             // px before a gesture is classified
+    const DISMISS_DIST = 80;    // px drag that closes the sheet
+    const FLICK_SPEED = 0.5;    // px/ms downward velocity that closes the sheet
+    let startX = 0, startY = 0, lastY = 0, lastT = 0, velocity = 0;
+    let mode = 'idle';          // idle | pending | drag | ignore
+    let fromContent = false;
+    let suppressClickUntil = 0;
+
+    const reset = () => {
+        shop.style.transition = '';
+        shop.style.transform = '';
+        shop.classList.remove('sheet-dragging', 'sheet-snap');
+        sheetScrim.style.opacity = '';
+    };
+
+    const onStart = (e) => {
+        if (!sheetQuery.matches || !shop.classList.contains('open') || e.touches.length !== 1) {
+            mode = 'ignore';
+            return;
+        }
+        const t = e.touches[0];
+        startX = t.clientX;
+        startY = lastY = t.clientY;
+        lastT = e.timeStamp;
+        velocity = 0;
+        fromContent = contentPanel.contains(e.target);
+        mode = 'pending';
+    };
+
+    const onMove = (e) => {
+        if (mode === 'idle' || mode === 'ignore') return;
+        const t = e.touches[0];
+        const dy = t.clientY - startY;
+        const dx = t.clientX - startX;
+
+        if (mode === 'pending') {
+            if (Math.abs(dy) < SLOP && Math.abs(dx) < SLOP) return;
+            // Inside the content only a downward pull from scrollTop 0 counts as dismiss
+            const canDrag = Math.abs(dy) > Math.abs(dx) && dy > 0 &&
+                (!fromContent || contentPanel.scrollTop <= 0);
+            if (!canDrag) { mode = 'ignore'; return; }
+            mode = 'drag';
+            shop.classList.add('sheet-dragging');
+        }
+
+        // Stop native scroll/overscroll while the sheet follows the finger
+        if (e.cancelable) e.preventDefault();
+        const dt = e.timeStamp - lastT;
+        if (dt > 0) velocity = (t.clientY - lastY) / dt;
+        lastY = t.clientY;
+        lastT = e.timeStamp;
+
+        const offset = Math.max(0, dy - SLOP);
+        shop.style.transform = `translateY(${offset}px)`;
+        sheetScrim.style.opacity = String(Math.max(0, 1 - offset / 300));
+    };
+
+    const onEnd = () => {
+        const wasDrag = mode === 'drag';
+        mode = 'idle';
+        if (!wasDrag) return;
+        // A drag must not also trigger a click on a tab or button under the finger
+        suppressClickUntil = Date.now() + 350;
+
+        const offset = Math.max(0, lastY - startY - SLOP);
+        const dismiss = offset >= DISMISS_DIST || (velocity > FLICK_SPEED && offset > 10);
+        shop.classList.add('sheet-snap');
+        if (dismiss) {
+            // Slide down by the content height: leaves exactly the closed tab bar showing
+            const panelH = contentPanel.offsetHeight;
+            shop.style.transition = 'transform 0.22s ease-in';
+            shop.style.transform = `translateY(${panelH}px)`;
+            sheetScrim.style.opacity = '0';
+            let done = false;
+            const finish = () => {
+                if (done) return;
+                done = true;
+                // Collapse with no transition so the swap from transform to height is seamless
+                setSheetOpen(false);
+                reset();
+                shop.classList.add('sheet-snap');
+                requestAnimationFrame(() => requestAnimationFrame(() => shop.classList.remove('sheet-snap')));
+            };
+            shop.addEventListener('transitionend', finish, { once: true });
+            setTimeout(finish, 300);
+        } else {
+            // Springy return to the open position
+            shop.style.transition = 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)';
+            shop.style.transform = 'translateY(0)';
+            sheetScrim.style.opacity = '';
+            setTimeout(reset, 320);
+        }
+    };
+
+    // Non-passive so preventDefault works; the global zoom guard only cancels pinch (scale != 1)
+    for (const el of [shop, sheetScrim]) {
+        el.addEventListener('touchstart', onStart, { passive: true });
+        el.addEventListener('touchmove', onMove, { passive: false });
+        el.addEventListener('touchend', onEnd);
+        el.addEventListener('touchcancel', onEnd);
+    }
+    document.addEventListener('click', (e) => {
+        if (Date.now() < suppressClickUntil) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    }, true);
+}
+
 function switchTab(tabName) {
     // Slide direction follows the tab order
     const dir = TAB_ORDER.indexOf(tabName) >= TAB_ORDER.indexOf(currentTab) ? 1 : -1;
@@ -331,6 +439,25 @@ function popElement(el) {
     );
 }
 
+// Exact IQ (e.g. "1 234 567") while it fits the HUD, compact (K/M/B) once it would overflow
+const hudEl = $('hud');
+const logoEl = $('logo');
+function formatIqForHud(value) {
+    const compact = game.formatNumber(value);
+    if (value < 1000) return compact;
+    const exact = Math.floor(value).toLocaleString('en-US').replace(/,/g, '\u00A0');
+    const prev = iqDisplay.textContent;
+    iqDisplay.textContent = exact;
+    const cs = getComputedStyle(hudEl);
+    let avail = hudEl.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    if (logoEl.offsetParent !== null) {
+        avail -= 2 * (logoEl.offsetWidth + (parseFloat(cs.columnGap) || 0));
+    }
+    const fits = iqDisplay.scrollWidth <= avail - 4;
+    iqDisplay.textContent = prev;
+    return fits ? exact : compact;
+}
+
 function updateStats() {
     // Smooth counter: snap for small numbers, ease towards the real value for big ones
     const diff = game.iq - displayedIQ;
@@ -342,7 +469,7 @@ function updateStats() {
     }
 
     // Only touch the DOM when the text really changed
-    const iqText = game.formatNumber(displayedIQ);
+    const iqText = formatIqForHud(displayedIQ);
     if (iqText !== lastIqText) {
         iqDisplay.textContent = lastIqText = iqText;
         if (displayedIQ > prevIQ) glowIq();
@@ -642,6 +769,10 @@ function updateCampus(initial = false) {
                     [{ transform: 'scale(1)' }, { transform: 'scale(1.04)' }, { transform: 'scale(1)' }],
                     { duration: 500, easing: 'ease-out' }
                 );
+                const bar = campus.querySelector('.campus-progress');
+                bar.classList.remove('stage-up');
+                void bar.offsetWidth; // restart the animation
+                bar.classList.add('stage-up');
             }
         }
         campusStage = stage;
@@ -839,10 +970,6 @@ function openSettings() {
 function syncSoundUI() {
     const on = soundManager.enabled;
     $('sound-switch').checked = on;
-    const toggle = $('sound-toggle');
-    toggle.textContent = on ? '🔊' : '🔇';
-    toggle.setAttribute('aria-pressed', on);
-    toggle.classList.toggle('muted', !on);
 }
 
 /** Full progress reset with two separate confirmations */
