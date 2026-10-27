@@ -1,8 +1,8 @@
-import { LEADERBOARD_API } from './data.js?v=9';
+import { LEADERBOARD_API } from './data.js?v=10';
 
 export const NAME_MAX = 24;
 export const SUBMIT_INTERVAL_MS = 31000;  // Worker allows 1 write per IP per 30 s
-const MAX_IQ = 1e21;                      // Must match the worker's ceiling
+const MAX_IQ = 1e15;                      // Must match the worker's ceiling
 const NAME_RE = /^[\p{L}\p{N} ]+$/u;      // Letters, digits, spaces: no emoji
 
 /** Collapse whitespace and trim */

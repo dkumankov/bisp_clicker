@@ -498,7 +498,11 @@ export const ACHIEVEMENTS = [
 export const PRESTIGE_CONFIG = {
     certificate_bonus: 0.1,  // +10% per certificate
     base_threshold: 1000000,  // IQ needed for first graduation
-    threshold_multiplier: 2.0  // Cost increase per graduation (2x each time)
+    threshold_multiplier: 2.0,  // Cost increase per graduation (2x each time)...
+    soft_graduations: 5,  // ...for the first N graduations, then the steeper factor below
+    late_threshold_multiplier: 4.0,  // Income grows faster than 2x per run, so late runs need a steeper climb
+    certificate_soft_cap: 50,  // Certificates past this count give diminishing (sqrt) returns
+    daily_graduation_cap: 10  // Graduations beyond this don't raise the daily bonus
 };
 
 // Click combo: tapping quickly builds a streak that multiplies click power
@@ -516,7 +520,7 @@ export const COMBO_CONFIG = {
 export const DAILY_BONUS_CONFIG = {
     min_iq: 500,             // Floor for the IQ pack so brand-new players get something
     iq_seconds: 600,         // IQ pack = this many seconds of steady IQ/s
-    prestige_step: 0.5,      // +50% reward per graduation
+    prestige_step: 0.5,      // +50% reward per graduation (up to PRESTIGE_CONFIG.daily_graduation_cap)
     click_multiplier: 3,     // Click power multiplier during the boost
     click_duration: 300      // Seconds (5 minutes)
 };

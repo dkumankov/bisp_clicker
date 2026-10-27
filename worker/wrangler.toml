@@ -3,6 +3,8 @@ main = "src/index.js"
 compatibility_date = "2025-01-01"
 
 # Serve the API under the game's own domain (the zone must be on Cloudflare).
+workers_dev = true
+preview_urls = false
 routes = [
   { pattern = "game.dimario.pro/api/*", zone_name = "dimario.pro" }
 ]

@@ -8,6 +8,7 @@
 // Routes (also reachable under the /api prefix, e.g. game.dimario.pro/api/score):
 //   POST /score        {name, iq, prestige}
 //   GET  /leaderboard
+//   POST /reset        header X-Reset-Token: <RESET_TOKEN secret> — wipe all scores
 
 // ===== Tunables =====
 const ALLOWED_ORIGINS = ['https://game.dimario.pro'];
@@ -18,14 +19,27 @@ const NAME_MIN = 1;
 const NAME_MAX = 24;
 const NAME_RE = /^[\p{L}\p{N} ]+$/u;     // letters, digits and spaces only (no emoji)
 
-const MAX_IQ = 1e21;                     // Hard ceiling for any submitted IQ
+const MAX_IQ = 1e15;                     // Absolute ceiling for any submitted IQ (matches leaderboard.js)
 const MAX_PRESTIGE = 100000;
-// Highest believable IQ gain per second. A guess, not a measurement: tune it
-// once real top-player numbers are known. It is intentionally generous.
-const MAX_IQ_PER_SEC = 10_000_000;
-// Flat allowance on top of the per-second ceiling (golden badges, rounding, the
-// game's offline-progress credit is covered by MAX_ELAPSED_SECONDS below).
-const IQ_GAIN_SLACK = 1_000_000;
+
+// Plausibility limits scale with graduations ("prestige"): the late tiers in data.js
+// (professor = 3e9 IQ/s each) really do produce billions per second, so one flat
+// ceiling either rejects honest veterans or lets a fresh account post billions.
+// Calibrated against a greedy-bot simulation of game-engine.js (a human is slower):
+//   prestige   bot IQ/s    ceiling      bot lifetime IQ   ceiling
+//        3     4e4         2e5           7e6              6e10
+//        6     6e5         8e6           7e7              4e12
+//        9     2e7         5e8           3e9              2.6e14
+//       12     3.5e9       3e10          2e11             1e15
+//       15     2e11        2e12          1e13             1e15
+const BASE_IQ_PER_SEC = 200_000;         // Ceiling for early players (prestige <= 3)
+const IQ_PER_SEC_BASE_LATE = 2000;       // Late ceiling = 2000 * 4^prestige
+const IQ_GROWTH_PER_PRESTIGE = 4;
+const BASE_MAX_IQ = 1e9;                 // Absolute IQ ceiling at prestige 0, x4 per prestige
+// Flat allowance on top of the per-second ceiling (golden badges, rounding).
+const IQ_GAIN_SLACK = 5_000;
+// A graduation takes at least a few minutes of play: one allowed per 5 min (+1 spare).
+const SECONDS_PER_PRESTIGE = 300;
 // The game credits at most 24 h of offline progress, so never allow more.
 const MAX_ELAPSED_SECONDS = 86400;
 
@@ -55,6 +69,9 @@ export default {
       if (path === '/score' && request.method === 'POST') {
         return await handleScore(request, env, cors);
       }
+      if (path === '/reset' && request.method === 'POST') {
+        return await handleReset(request, env, cors);
+      }
       return json({ error: 'not found' }, 404, cors);
     } catch (err) {
       console.error(err);
@@ -64,6 +81,27 @@ export default {
 };
 
 // ===== Handlers =====
+
+/** Wipe every score:* key and the cached top list. Guarded by the RESET_TOKEN secret. */
+async function handleReset(request, env, cors) {
+  const token = request.headers.get('X-Reset-Token');
+  if (!env.RESET_TOKEN || token !== env.RESET_TOKEN) {
+    return json({ error: 'forbidden' }, 403, cors);
+  }
+  let deleted = 0;
+  let cursor;
+  do {
+    const page = await env.LEADERBOARD.list({ cursor });
+    for (const k of page.keys) {
+      if (k.name.startsWith('score:') || k.name === 'lb:top') {
+        await env.LEADERBOARD.delete(k.name);
+        deleted++;
+      }
+    }
+    cursor = page.list_complete ? undefined : page.cursor;
+  } while (cursor);
+  return json({ ok: true, deleted }, 200, cors);
+}
 
 async function handleLeaderboard(env, cors) {
   const top = (await env.LEADERBOARD.get('lb:top', 'json')) || [];
@@ -80,6 +118,11 @@ async function handleScore(request, env, cors) {
 
   const entry = validate(body);
   if (!entry) return json({ error: 'invalid payload' }, 400, cors);
+
+  const absCap = maxIqFor(entry.prestige);
+  if (entry.iq > absCap) {
+    return json({ error: `IQ too high for ${entry.prestige} graduations (max ${absCap})` }, 422, cors);
+  }
 
   // Rate limit per IP
   const now = Date.now();
@@ -98,9 +141,12 @@ async function handleScore(request, env, cors) {
     // Plausibility: the gain must fit in the time since the last accepted write.
     // Elapsed time is measured by the server (lastSeen), so the client cannot lie about it.
     const elapsed = Math.min((now - prev.lastSeen) / 1000, MAX_ELAPSED_SECONDS);
-    const maxGain = elapsed * MAX_IQ_PER_SEC + IQ_GAIN_SLACK;
+    const maxGain = elapsed * maxIqPerSec(entry.prestige) + IQ_GAIN_SLACK;
     if (entry.iq - prev.iq > maxGain) {
-      return json({ error: 'implausible score' }, 422, cors);
+      return json({ error: `IQ gain too fast: +${entry.iq - prev.iq} in ${Math.round(elapsed)}s (max ${Math.floor(maxGain)})` }, 422, cors);
+    }
+    if (entry.prestige - prev.prestige > Math.floor(elapsed / SECONDS_PER_PRESTIGE) + 1) {
+      return json({ error: 'graduations rising too fast' }, 422, cors);
     }
   }
 
@@ -120,6 +166,14 @@ async function handleScore(request, env, cors) {
 }
 
 // ===== Helpers =====
+
+function maxIqPerSec(prestige) {
+  return Math.max(BASE_IQ_PER_SEC, IQ_PER_SEC_BASE_LATE * Math.pow(IQ_GROWTH_PER_PRESTIGE, prestige));
+}
+
+function maxIqFor(prestige) {
+  return Math.min(MAX_IQ, BASE_MAX_IQ * Math.pow(IQ_GROWTH_PER_PRESTIGE, prestige));
+}
 
 /** Return a clean {name, iq, prestige} or null when the payload is not acceptable */
 function validate(body) {

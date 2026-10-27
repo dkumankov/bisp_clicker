@@ -1,8 +1,8 @@
-import { GameEngine } from './game-engine.js?v=9';
-import { SaveManager, MIN_OFFLINE_SECONDS } from './save-manager.js?v=9';
-import { SoundManager } from './sound-manager.js?v=9';
-import { fetchLeaderboard, postScore, validateName, cleanName, timeAgo, SUBMIT_INTERVAL_MS } from './leaderboard.js?v=9';
-import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, COMBO_CONFIG, GOLDEN_CONFIG, CAMPUS_STAGES, MILESTONES } from './data.js?v=9';
+import { GameEngine } from './game-engine.js?v=10';
+import { SaveManager, MIN_OFFLINE_SECONDS } from './save-manager.js?v=10';
+import { SoundManager } from './sound-manager.js?v=10';
+import { fetchLeaderboard, postScore, validateName, cleanName, timeAgo, SUBMIT_INTERVAL_MS } from './leaderboard.js?v=10';
+import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, COMBO_CONFIG, GOLDEN_CONFIG, CAMPUS_STAGES, MILESTONES } from './data.js?v=10';
 
 // Initialize game engine, save manager, and sound manager
 const game = new GameEngine();

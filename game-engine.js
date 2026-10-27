@@ -1,4 +1,4 @@
-import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, ACHIEVEMENTS, PRESTIGE_CONFIG, COMBO_CONFIG, GOLDEN_CONFIG, DAILY_BONUS_CONFIG, CAMPUS_STAGES } from './data.js?v=9';
+import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, ACHIEVEMENTS, PRESTIGE_CONFIG, COMBO_CONFIG, GOLDEN_CONFIG, DAILY_BONUS_CONFIG, CAMPUS_STAGES } from './data.js?v=10';
 
 export class GameEngine {
     constructor() {
@@ -106,7 +106,7 @@ export class GameEngine {
     /** Reward preview: IQ pack scaled by steady IQ/s and graduations, plus a click boost */
     getDailyBonus() {
         const cfg = DAILY_BONUS_CONFIG;
-        const scale = 1 + this.graduations * cfg.prestige_step;
+        const scale = 1 + Math.min(this.graduations, PRESTIGE_CONFIG.daily_graduation_cap) * cfg.prestige_step;
         const iq = Math.floor(Math.max(cfg.min_iq, this.calculateIQPerSecond(false) * cfg.iq_seconds) * scale);
         return { iq, click_multiplier: cfg.click_multiplier, click_duration: cfg.click_duration };
     }
@@ -255,7 +255,7 @@ export class GameEngine {
 
         // Certificate bonuses (prestige)
         if (this.certificates > 0) {
-            globalMult *= (1 + this.certificates * PRESTIGE_CONFIG.certificate_bonus);
+            globalMult *= this.getCertificateMultiplier();
         }
 
         // Active event bonuses
@@ -372,8 +372,23 @@ export class GameEngine {
     }
 
     canGraduate() {
-        const threshold = PRESTIGE_CONFIG.base_threshold * Math.pow(PRESTIGE_CONFIG.threshold_multiplier, this.graduations);
-        return this.total_iq_earned >= threshold;
+        return this.total_iq_earned >= this.getGraduationThreshold();
+    }
+
+    /** IQ (earned this run) needed for the next graduation: 2x per step early, steeper later */
+    getGraduationThreshold() {
+        const c = PRESTIGE_CONFIG;
+        const early = Math.min(this.graduations, c.soft_graduations);
+        const late = Math.max(0, this.graduations - c.soft_graduations);
+        return c.base_threshold * Math.pow(c.threshold_multiplier, early) * Math.pow(c.late_threshold_multiplier, late);
+    }
+
+    /** Global multiplier from certificates: linear up to the soft cap, sqrt growth after it */
+    getCertificateMultiplier() {
+        const c = PRESTIGE_CONFIG;
+        const linear = Math.min(this.certificates, c.certificate_soft_cap);
+        const extra = Math.sqrt(Math.max(0, this.certificates - c.certificate_soft_cap)) * 2;
+        return 1 + (linear + extra) * c.certificate_bonus;
     }
 
     graduate() {
@@ -382,7 +397,7 @@ export class GameEngine {
         }
 
         // Calculate certificates earned
-        const threshold = PRESTIGE_CONFIG.base_threshold * Math.pow(PRESTIGE_CONFIG.threshold_multiplier, this.graduations);
+        const threshold = this.getGraduationThreshold();
         const newCertificates = Math.floor(this.lifetime_iq / threshold);
 
         // Reset game state
@@ -564,7 +579,7 @@ export class GameEngine {
 
         // Certificate bonuses (prestige)
         if (this.certificates > 0) {
-            globalMult *= (1 + this.certificates * PRESTIGE_CONFIG.certificate_bonus);
+            globalMult *= this.getCertificateMultiplier();
         }
 
         return production * synergyMult * upgradeMult * globalMult;
