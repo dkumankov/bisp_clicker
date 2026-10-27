@@ -1,4 +1,4 @@
-import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, ACHIEVEMENTS, PRESTIGE_CONFIG, COMBO_CONFIG, GOLDEN_CONFIG, CAMPUS_STAGES } from './data.js?v=7';
+import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, ACHIEVEMENTS, PRESTIGE_CONFIG, COMBO_CONFIG, GOLDEN_CONFIG, DAILY_BONUS_CONFIG, CAMPUS_STAGES } from './data.js?v=8';
 
 export class GameEngine {
     constructor() {
@@ -7,6 +7,7 @@ export class GameEngine {
         this.lifetime_iq = 0.0;  // Never resets, for prestige calculation
         this.click_power = 1.0;
         this.clicks = 0;
+        this.last_bonus_date = '';  // Local date (YYYY-MM-DD) of the last daily bonus
         this.leaderboard_name = '';  // Player name for the leaderboard (never reset by graduation)
 
         // Buildings
@@ -92,6 +93,40 @@ export class GameEngine {
         });
     }
 
+    /** Local calendar date as YYYY-MM-DD (honest per-day cooldown, not 24h) */
+    static localDateKey(d = new Date()) {
+        const p = (n) => String(n).padStart(2, '0');
+        return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+    }
+
+    canClaimDailyBonus() {
+        return this.last_bonus_date !== GameEngine.localDateKey();
+    }
+
+    /** Reward preview: IQ pack scaled by steady IQ/s and graduations, plus a click boost */
+    getDailyBonus() {
+        const cfg = DAILY_BONUS_CONFIG;
+        const scale = 1 + this.graduations * cfg.prestige_step;
+        const iq = Math.floor(Math.max(cfg.min_iq, this.calculateIQPerSecond(false) * cfg.iq_seconds) * scale);
+        return { iq, click_multiplier: cfg.click_multiplier, click_duration: cfg.click_duration };
+    }
+
+    /** Grant the daily bonus once per local date. @returns the reward, or null if already claimed */
+    claimDailyBonus() {
+        if (!this.canClaimDailyBonus()) return null;
+        const reward = this.getDailyBonus();
+        this.last_bonus_date = GameEngine.localDateKey();
+        this.addIQ(reward.iq);
+        this.active_events = this.active_events.filter(e => e.id !== 'daily_click');
+        this.active_events.push({
+            id: 'daily_click',
+            type: 'click_bonus',
+            multiplier: reward.click_multiplier,
+            time_remaining: reward.click_duration
+        });
+        return reward;
+    }
+
     /** Index of the current campus stage, based on lifetime IQ */
     getCampusStage() {
         let stage = 0;
@@ -122,6 +157,10 @@ export class GameEngine {
                     power *= ach.reward_value;
                 }
             }
+        }
+
+        for (const event of this.active_events) {
+            if (event.type === 'click_bonus') power *= event.multiplier;
         }
 
         return power;

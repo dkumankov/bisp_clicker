@@ -1423,3 +1423,19 @@ button:focus-visible,
 .lb-error .modal-button {
     min-width: 160px;
 }
+
+/* ===== Daily bonus and typed confirmation ===== */
+.daily-click {
+    margin-bottom: 1.25rem;
+    font-weight: 700;
+}
+
+#confirm-type {
+    margin-bottom: 1rem;
+}
+
+#confirm-type .text-input {
+    text-align: center;
+    letter-spacing: 0.15em;
+    font-weight: 700;
+}

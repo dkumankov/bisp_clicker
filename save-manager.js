@@ -1,5 +1,5 @@
 // Save format version. v1 = original format (no version field).
-// v2 only ADDS optional fields (best_combo, golden_clicks), so v1 saves load unchanged.
+// v2 only ADDS optional fields (best_combo, golden_clicks, leaderboard_name, last_bonus_date), so v1 saves load unchanged.
 const SAVE_VERSION = 2;
 
 // Ignore "away" times shorter than this when showing the welcome-back screen
@@ -42,6 +42,7 @@ export class SaveManager {
             best_combo: gameEngine.best_combo,
             golden_clicks: gameEngine.golden_clicks,
             leaderboard_name: gameEngine.leaderboard_name,
+            last_bonus_date: gameEngine.last_bonus_date,
             last_save_time: Date.now(),
             // Steady rate without temporary events, so bonuses don't inflate offline progress
             iq_per_second: gameEngine.calculateIQPerSecond(false)
@@ -86,6 +87,7 @@ export class SaveManager {
             gameEngine.best_combo = num(saveData.best_combo);      // Missing in v1 saves
             gameEngine.golden_clicks = num(saveData.golden_clicks);  // Missing in v1 saves
             gameEngine.leaderboard_name = typeof saveData.leaderboard_name === 'string' ? saveData.leaderboard_name : '';  // Missing in older saves
+            gameEngine.last_bonus_date = typeof saveData.last_bonus_date === 'string' ? saveData.last_bonus_date : '';  // Missing in older saves
             result.loaded = true;
 
             // Calculate offline progress

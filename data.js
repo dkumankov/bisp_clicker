@@ -513,6 +513,14 @@ export const COMBO_CONFIG = {
 };
 
 // Golden School Badge: a random bonus that appears on screen
+export const DAILY_BONUS_CONFIG = {
+    min_iq: 500,             // Floor for the IQ pack so brand-new players get something
+    iq_seconds: 600,         // IQ pack = this many seconds of steady IQ/s
+    prestige_step: 0.5,      // +50% reward per graduation
+    click_multiplier: 3,     // Click power multiplier during the boost
+    click_duration: 300      // Seconds (5 minutes)
+};
+
 export const GOLDEN_CONFIG = {
     first_min_delay: 30,  // Seconds of play until the very first badge (random range)
     first_max_delay: 60,

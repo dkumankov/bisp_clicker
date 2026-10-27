@@ -11,8 +11,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=7">
-    <link rel="stylesheet" href="mobile.css?v=7">
+    <link rel="stylesheet" href="style.css?v=8">
+    <link rel="stylesheet" href="mobile.css?v=8">
 </head>
 
 <body>
@@ -141,6 +141,18 @@
         </div>
     </div>
 
+    <!-- Daily Bonus Modal -->
+    <div class="modal modal-confirm hidden" id="daily-modal" role="dialog" aria-modal="true" aria-labelledby="daily-title">
+        <div class="modal-content">
+            <div class="modal-emoji">🎁</div>
+            <h2 id="daily-title">Daily bonus</h2>
+            <p>Thanks for coming back today! Your reward:</p>
+            <div class="offline-iq" id="daily-iq">+0 IQ</div>
+            <p id="daily-click" class="daily-click"></p>
+            <button class="modal-button" id="daily-claim">Claim</button>
+        </div>
+    </div>
+
     <!-- Settings Modal -->
     <div class="modal hidden" id="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
         <div class="modal-content settings-content">
@@ -184,12 +196,15 @@
         </div>
     </div>
 
-    <!-- Generic confirm modal (used by graduate and the two reset steps) -->
+    <!-- Generic confirm modal (used by graduate and the reset steps) -->
     <div class="modal modal-confirm hidden" id="confirm-modal" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title">
         <div class="modal-content">
             <div class="modal-emoji" id="confirm-emoji">❓</div>
             <h2 id="confirm-title"></h2>
             <p id="confirm-text"></p>
+            <div id="confirm-type" class="hidden">
+                <input class="text-input" id="confirm-type-input" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Type RESET to confirm">
+            </div>
             <div class="modal-actions">
                 <button class="modal-button secondary" id="confirm-cancel">Cancel</button>
                 <button class="modal-button" id="confirm-ok">OK</button>
@@ -226,7 +241,7 @@
         </div>
     </div>
 
-    <script type="module" src="app.js?v=7"></script>
+    <script type="module" src="app.js?v=8"></script>
 </body>
 
 </html>

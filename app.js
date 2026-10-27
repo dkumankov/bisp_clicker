@@ -1,8 +1,8 @@
-import { GameEngine } from './game-engine.js?v=7';
-import { SaveManager, MIN_OFFLINE_SECONDS } from './save-manager.js?v=7';
-import { SoundManager } from './sound-manager.js?v=7';
-import { fetchLeaderboard, postScore, validateName, cleanName, timeAgo, SUBMIT_INTERVAL_MS } from './leaderboard.js?v=7';
-import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, COMBO_CONFIG, GOLDEN_CONFIG, CAMPUS_STAGES, MILESTONES } from './data.js?v=7';
+import { GameEngine } from './game-engine.js?v=8';
+import { SaveManager, MIN_OFFLINE_SECONDS } from './save-manager.js?v=8';
+import { SoundManager } from './sound-manager.js?v=8';
+import { fetchLeaderboard, postScore, validateName, cleanName, timeAgo, SUBMIT_INTERVAL_MS } from './leaderboard.js?v=8';
+import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, COMBO_CONFIG, GOLDEN_CONFIG, CAMPUS_STAGES, MILESTONES } from './data.js?v=8';
 
 // Initialize game engine, save manager, and sound manager
 const game = new GameEngine();
@@ -73,6 +73,7 @@ function init() {
     }
 
     if (!game.leaderboard_name) openNameModal();
+    maybeShowDailyBonus();  // Waits for any open modal (name, welcome back) to close first
 
     requestAnimationFrame(gameLoop);
 
@@ -121,6 +122,7 @@ function setupEventListeners() {
     goldenBadge.addEventListener('pointerdown', handleGoldenCatch);
 
     // Modals
+    $('daily-claim').addEventListener('click', claimDaily);
     $('close-offline-modal').addEventListener('click', () => closeModal($('offline-modal')));
     $('settings-button').addEventListener('click', openSettings);
     $('close-settings').addEventListener('click', () => closeModal($('settings-modal')));
@@ -963,7 +965,7 @@ function closeModal(modal) {
  * Show the shared confirm dialog.
  * @returns {Promise<boolean>} true when the player confirmed
  */
-function confirmDialog({ emoji, title, text, okLabel = 'OK', cancelLabel = 'Cancel', danger = false, lockMs = 0 }) {
+function confirmDialog({ emoji, title, text, okLabel = 'OK', cancelLabel = 'Cancel', danger = false, lockMs = 0, typeWord = '' }) {
     const modal = $('confirm-modal');
     const okBtn = $('confirm-ok');
     const cancelBtn = $('confirm-cancel');
@@ -979,19 +981,32 @@ function confirmDialog({ emoji, title, text, okLabel = 'OK', cancelLabel = 'Canc
     okBtn.disabled = lockMs > 0;
     const unlockTimer = lockMs > 0 ? setTimeout(() => { okBtn.disabled = false; }, lockMs) : null;
 
+    // Optional typed confirmation: OK stays disabled until the exact word is entered
+    const typeWrap = $('confirm-type');
+    const typeInput = $('confirm-type-input');
+    typeWrap.classList.toggle('hidden', !typeWord);
+    typeInput.value = '';
+    if (typeWord) {
+        okBtn.disabled = true;
+        typeInput.placeholder = `Type ${typeWord}`;
+    }
+    const onType = () => { okBtn.disabled = typeInput.value !== typeWord; };
+    if (typeWord) typeInput.addEventListener('input', onType);
+
     return new Promise(resolve => {
         const finish = (result) => {
             clearTimeout(unlockTimer);
+            typeInput.removeEventListener('input', onType);
             okBtn.removeEventListener('click', onOk);
             cancelBtn.removeEventListener('click', onCancel);
             closeModal(modal);
             resolve(result);
         };
-        const onOk = () => finish(true);
+        const onOk = () => { if (!okBtn.disabled) finish(true); };
         const onCancel = () => finish(false);
         okBtn.addEventListener('click', onOk);
         cancelBtn.addEventListener('click', onCancel);
-        openModal(modal, cancelBtn);  // Focus the safe option by default
+        openModal(modal, typeWord ? typeInput : cancelBtn);  // Focus the safe option by default
     });
 }
 
@@ -1010,7 +1025,7 @@ function syncSoundUI() {
     $('sound-switch').checked = on;
 }
 
-/** Full progress reset with two separate confirmations */
+/** Full progress reset with a confirmation plus a typed RESET */
 async function handleReset() {
     const first = await confirmDialog({
         emoji: '⚠️',
@@ -1025,11 +1040,11 @@ async function handleReset() {
     const second = await confirmDialog({
         emoji: '🛑',
         title: 'Final warning',
-        text: 'Really sure? This cannot be undone.',
+        text: 'This cannot be undone. Type RESET below to confirm.',
         okLabel: 'Erase forever',
         cancelLabel: 'Cancel',
         danger: true,
-        lockMs: 1500
+        typeWord: 'RESET'
     });
     if (!second) return;
 
@@ -1208,6 +1223,30 @@ function renderLeaderboard() {
         li.append(rank, who, stats);
         list.appendChild(li);
     });
+}
+
+// ===== Daily bonus =====
+function maybeShowDailyBonus() {
+    if (!game.canClaimDailyBonus()) return;
+    // Wait while another modal (welcome back, name) is open; the claim itself starts the cooldown
+    if (document.querySelector('.modal.open')) {
+        setTimeout(maybeShowDailyBonus, 800);
+        return;
+    }
+    const reward = game.getDailyBonus();
+    $('daily-iq').textContent = '+' + game.formatNumber(reward.iq) + ' IQ';
+    $('daily-click').textContent = `🖱️ Click power x${reward.click_multiplier} for ${Math.round(reward.click_duration / 60)} minutes`;
+    openModal($('daily-modal'), $('daily-claim'));
+    soundManager.playMilestone();
+}
+
+function claimDaily() {
+    const reward = game.claimDailyBonus();
+    closeModal($('daily-modal'));
+    if (!reward) return;
+    saveManager.saveGame(game);
+    showToast({ key: 'daily', icon: '🎁', kind: 'gold', title: 'Daily bonus claimed', text: '+' + game.formatNumber(reward.iq) + ' IQ' });
+    renderAll();
 }
 
 // ===== Offline Progress =====
