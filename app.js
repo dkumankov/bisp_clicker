@@ -88,15 +88,8 @@ function setupEventListeners() {
         document.addEventListener('gesturestart', (e) => e.preventDefault());
         document.addEventListener('gesturechange', (e) => e.preventDefault());
         document.addEventListener('gestureend', (e) => e.preventDefault());
-        // Kill double-tap zoom (300 ms delay) and pull-to-refresh overscroll
-        let lastTouchEnd = 0;
-        document.addEventListener('touchend', (e) => {
-            const now = Date.now();
-            if (now - lastTouchEnd < 350) {
-                e.preventDefault();
-            }
-            lastTouchEnd = now;
-        }, { passive: false });
+        // Double-tap zoom is disabled via CSS touch-action: manipulation; a touchend
+        // preventDefault here would swallow the click of every rapid second tap.
         document.addEventListener('touchmove', (e) => {
             if (e.scale !== undefined && e.scale !== 1) e.preventDefault();
         }, { passive: false });
@@ -112,6 +105,8 @@ function setupEventListeners() {
         handleStudyClick(rect.left + rect.width / 2, rect.top + rect.height / 2);
     });
     studyButton.addEventListener('contextmenu', (e) => e.preventDefault());
+
+    setupPurchaseTaps();
 
     // Tabs
     tabs.forEach(tab => {
@@ -562,6 +557,42 @@ function playBoughtAnimation() {
     }, 900);
 }
 
+// Latest purchase callback per card key (refreshed on every render)
+const purchaseHandlers = new Map();
+
+/**
+ * Buy buttons are handled on pointerup via delegation, keyed by data-key. A per-button
+ * click listener loses rapid taps: renderAll() rebuilds the cards after each purchase, so
+ * the next tap's pointerdown/pointerup land on different nodes and no click is fired.
+ */
+function setupPurchaseTaps() {
+    let down = null;
+    const keyOf = (e) => {
+        const btn = e.target.closest('.building-button, .list-item-button');
+        return btn ? btn.closest('[data-key]')?.dataset.key : null;
+    };
+    contentPanel.addEventListener('pointerdown', (e) => {
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        const key = keyOf(e);
+        down = key ? { id: e.pointerId, key, x: e.clientX, y: e.clientY } : null;
+    });
+    contentPanel.addEventListener('pointerup', (e) => {
+        const d = down;
+        down = null;
+        if (!d || d.id !== e.pointerId) return;
+        if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 12) return;  // scroll/drag, not a tap
+        if (keyOf(e) !== d.key && !document.querySelector(`[data-key="${d.key}"]`)) return;
+        purchaseHandlers.get(d.key)?.();
+    });
+    contentPanel.addEventListener('pointercancel', () => { down = null; });
+    // Keyboard activation only (real pointer clicks were handled on pointerup)
+    contentPanel.addEventListener('click', (e) => {
+        if (e.detail !== 0) return;
+        const key = keyOf(e);
+        if (key) purchaseHandlers.get(key)?.();
+    });
+}
+
 function createBuildingCard({ key, data, count, cost, label, buy, toast, sound = 'purchase' }) {
     const canAfford = game.canAfford(cost);
     const card = document.createElement('div');
@@ -576,8 +607,7 @@ function createBuildingCard({ key, data, count, cost, label, buy, toast, sound =
         <div class="building-desc">${data.description}</div>
         <button class="building-button ${canAfford ? 'affordable' : ''}">${label}</button>
     `;
-    card.querySelector('button').addEventListener('click', () =>
-        attemptPurchase(key, buy, { toast, sound }));
+    purchaseHandlers.set(key, () => attemptPurchase(key, buy, { toast, sound }));
     return card;
 }
 
@@ -597,8 +627,7 @@ function createListItem({ key, data, owned, cost, label, ownedLabel, buy, toast 
             : `<button class="list-item-button ${canAfford ? 'affordable' : ''}">${label}</button>`}
     `;
     if (!owned) {
-        item.querySelector('button').addEventListener('click', () =>
-            attemptPurchase(key, buy, { toast, sound: 'upgrade' }));
+        purchaseHandlers.set(key, () => attemptPurchase(key, buy, { toast, sound: 'upgrade' }));
     }
     return item;
 }

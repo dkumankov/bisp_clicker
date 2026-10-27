@@ -81,7 +81,7 @@
         top: calc(var(--hud-h) + env(safe-area-inset-top) + 44px);
     }
 
-    /* Play field: campus on top, click button anchored low in the thumb zone */
+    /* Play field: campus on top, click button centered in the free area */
     .game {
         display: flex;
         flex-direction: column;
@@ -131,7 +131,8 @@
     }
 
     .study-section {
-        margin-top: auto;
+        /* Centered in the free space between the campus card and the bottom sheet */
+        margin-block: auto;
         gap: 0.5rem;
     }
 
