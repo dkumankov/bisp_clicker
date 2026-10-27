@@ -11,4 +11,4 @@ routes = [
 # and paste the returned id below.
 [[kv_namespaces]]
 binding = "LEADERBOARD"
-id = "REPLACE_WITH_KV_NAMESPACE_ID"
+id = "a97b5491c13148a4af2a0b473614837b"
