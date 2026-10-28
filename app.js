@@ -1,8 +1,8 @@
-import { GameEngine } from './game-engine.js?v=12';
-import { SaveManager, MIN_OFFLINE_SECONDS } from './save-manager.js?v=12';
-import { SoundManager } from './sound-manager.js?v=12';
-import { fetchLeaderboard, postScore, validateName, cleanName, timeAgo, SUBMIT_INTERVAL_MS } from './leaderboard.js?v=12';
-import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, COMBO_CONFIG, GOLDEN_CONFIG, CAMPUS_STAGES, MILESTONES } from './data.js?v=12';
+import { GameEngine } from './game-engine.js?v=13';
+import { SaveManager, MIN_OFFLINE_SECONDS } from './save-manager.js?v=13';
+import { SoundManager } from './sound-manager.js?v=13';
+import { fetchLeaderboard, postScore, validateName, cleanName, timeAgo, SUBMIT_INTERVAL_MS } from './leaderboard.js?v=13';
+import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, COMBO_CONFIG, GOLDEN_CONFIG, CAMPUS_STAGES, MILESTONES } from './data.js?v=13';
 
 // Initialize game engine, save manager, and sound manager
 const game = new GameEngine();
@@ -1028,6 +1028,8 @@ function syncSoundUI() {
 }
 
 /** Full progress reset with a confirmation plus a typed RESET */
+let resetting = false;
+
 async function handleReset() {
     const first = await confirmDialog({
         emoji: '⚠️',
@@ -1049,6 +1051,14 @@ async function handleReset() {
         typeWord: 'RESET'
     });
     if (!second) return;
+
+    // Zero out the player's leaderboard entry BEFORE wiping the save,
+    // so the old record does not linger on the server after the reset.
+    // resetting stops pagehide/interval submits from re-posting the old score during reload.
+    resetting = true;
+    if (game.leaderboard_name) {
+        try { await postScore(game.leaderboard_name, 0, 0); } catch { /* best effort */ }
+    }
 
     // deleteSave() also blocks autosave/pagehide saves so nothing rewrites the old state
     saveManager.deleteSave();
@@ -1093,7 +1103,7 @@ function scoreIq() {
 async function submitScore(force = false) {
     const name = game.leaderboard_name;
     const iq = scoreIq();
-    if (!name || submitting || (!force && iq === lastSubmittedIq)) return;
+    if (!name || submitting || resetting || (!force && iq === lastSubmittedIq)) return;
     submitting = true;
     const ok = await postScore(name, iq, game.graduations);
     submitting = false;

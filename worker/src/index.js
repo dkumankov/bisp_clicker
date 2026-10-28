@@ -124,18 +124,27 @@ async function handleScore(request, env, cors) {
     return json({ error: `IQ too high for ${entry.prestige} graduations (max ${absCap})` }, 422, cors);
   }
 
-  // Rate limit per IP
+  // An explicit reset (iq: 0 and prestige: 0) deletes the player's record
+  const isReset = entry.iq === 0 && entry.prestige === 0;
+
+  // Rate limit per IP (a reset is exempt so a score posted seconds earlier cannot block it)
   const now = Date.now();
   const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
   const rlKey = 'rl:' + ip;
   const lastWrite = Number(await env.LEADERBOARD.get(rlKey)) || 0;
-  if (now - lastWrite < RATE_LIMIT_MS) {
+  if (!isReset && now - lastWrite < RATE_LIMIT_MS) {
     const retryAfter = Math.ceil((RATE_LIMIT_MS - (now - lastWrite)) / 1000);
     return json({ error: 'rate limited' }, 429, { ...cors, 'Retry-After': String(retryAfter) });
   }
 
   const key = 'score:' + entry.name.toLowerCase();
   const prev = await env.LEADERBOARD.get(key, 'json');
+
+  if (isReset) {
+    await env.LEADERBOARD.delete(key);
+    await removeFromTop(env, entry.name);
+    return json({ ok: true, iq: 0, prestige: 0, deleted: !!prev }, 200, cors);
+  }
 
   if (prev) {
     // Plausibility: the gain must fit in the time since the last accepted write.
@@ -198,6 +207,13 @@ async function updateTop(env, entry) {
   next.push(entry);
   next.sort((a, b) => b.iq - a.iq);
   await env.LEADERBOARD.put('lb:top', JSON.stringify(next.slice(0, TOP_SIZE)));
+}
+
+/** Drop one player from the cached top list */
+async function removeFromTop(env, name) {
+  const top = (await env.LEADERBOARD.get('lb:top', 'json')) || [];
+  const lowered = name.toLowerCase();
+  await env.LEADERBOARD.put('lb:top', JSON.stringify(top.filter(e => e.name.toLowerCase() !== lowered)));
 }
 
 function corsHeaders(origin) {
