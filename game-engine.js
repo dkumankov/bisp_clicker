@@ -1,4 +1,4 @@
-import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, ACHIEVEMENTS, PRESTIGE_CONFIG, COMBO_CONFIG, GOLDEN_CONFIG, DAILY_BONUS_CONFIG, CAMPUS_STAGES } from './data.js?v=11';
+import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, ACHIEVEMENTS, PRESTIGE_CONFIG, COMBO_CONFIG, GOLDEN_CONFIG, DAILY_BONUS_CONFIG, CAMPUS_STAGES, ECONOMY_CONFIG } from './data.js?v=12';
 
 export class GameEngine {
     constructor() {
@@ -54,7 +54,7 @@ export class GameEngine {
         this.clicks++;
 
         // Extend the combo streak if the click is quick enough, otherwise restart it
-        if (this.combo > 0 && now - this.last_click_time <= COMBO_CONFIG.window_ms) {
+        if (this.combo > 0 && now - this.last_click_time <= this.getComboWindow()) {
             this.combo++;
         } else {
             this.combo = 1;
@@ -78,7 +78,7 @@ export class GameEngine {
     /** Fraction (0..1) of the combo window that is still left, for the combo meter */
     getComboTimeLeft(now = performance.now()) {
         if (this.combo === 0) return 0;
-        return Math.max(0, 1 - (now - this.last_click_time) / COMBO_CONFIG.window_ms);
+        return Math.max(0, 1 - (now - this.last_click_time) / this.getComboWindow());
     }
 
     /** Called when a Golden School Badge is caught: temporary IQ/s boost */
@@ -89,7 +89,8 @@ export class GameEngine {
             id: 'golden',
             type: 'student_bonus',
             multiplier: GOLDEN_CONFIG.multiplier,
-            time_remaining: GOLDEN_CONFIG.duration
+            duration: this.getGoldenDuration(),
+            time_remaining: this.getGoldenDuration()
         });
     }
 
@@ -136,27 +137,77 @@ export class GameEngine {
         return stage;
     }
 
+    /** Purchased upgrades of one type */
+    getUpgrades(type) {
+        return UPGRADES.filter(u => this.upgrades[u.id] && u.type === type);
+    }
+
+    /** Owned facilities with one effect type */
+    getFacilityEffects(type) {
+        return FACILITIES.filter(f => this.facilities[f.id] && f.effect_type === type);
+    }
+
+    /** Product of the unlocked achievement rewards of one type */
+    getAchievementMultiplier(rewardType) {
+        let mult = 1.0;
+        for (const ach of ACHIEVEMENTS) {
+            if (this.achievements[ach.id] && ach.reward_type === rewardType) mult *= ach.reward_value;
+        }
+        return mult;
+    }
+
+    /** Sum of the bonuses (value - 1) of owned facilities of one type, e.g. 1.15 and 1.10 give +0.25 */
+    getFacilityBonus(type) {
+        return this.getFacilityEffects(type).reduce((sum, f) => sum + (f.effect_value - 1.0), 0);
+    }
+
+    /** Combo window in ms, stretched by the legendary combo facility */
+    getComboWindow() {
+        return this.getFacilityEffects('combo_extend').reduce((w, f) => w * f.effect_value, COMBO_CONFIG.window_ms);
+    }
+
+    /** Seconds the golden bonus lasts, stretched by legendary upgrades */
+    getGoldenDuration() {
+        return this.getUpgrades('golden_duration').reduce((d, u) => d * u.value, GOLDEN_CONFIG.duration);
+    }
+
+    /** Delay range (seconds) between golden badges; the legendary facility guarantees a badge within its value */
+    getGoldenDelayRange() {
+        let min = GOLDEN_CONFIG.min_delay;
+        let max = GOLDEN_CONFIG.max_delay;
+        for (const f of this.getFacilityEffects('golden_guarantee')) {
+            max = Math.min(max, f.effect_value);
+            min = Math.min(min, f.effect_value * 0.6);
+        }
+        return { min, max };
+    }
+
+    /** Certificates a graduation would grant: 1, +1 per N past graduations, plus legendary facility bonuses */
+    getCertificatesForGraduation() {
+        const c = PRESTIGE_CONFIG;
+        const bonus = this.getFacilityEffects('certificate_bonus').reduce((sum, f) => sum + f.effect_value, 0);
+        return 1 + Math.floor(this.graduations / c.bonus_certificate_every) + bonus;
+    }
+
     calculateClickPower() {
         let power = this.click_power;
 
-        // Apply click upgrades
-        for (const [upgradeId, purchased] of Object.entries(this.upgrades)) {
-            if (purchased) {
-                const upgrade = UPGRADES.find(u => u.id === upgradeId);
-                if (upgrade && upgrade.type === "click_power") {
-                    power *= upgrade.value;
-                }
-            }
+        for (const upgrade of this.getUpgrades("click_power")) {
+            power *= upgrade.value;
         }
 
-        // Apply achievement bonuses
-        for (const [achId, unlocked] of Object.entries(this.achievements)) {
-            if (unlocked) {
-                const ach = ACHIEVEMENTS.find(a => a.id === achId);
-                if (ach && ach.reward_type === "click_power") {
-                    power *= ach.reward_value;
-                }
-            }
+        // Click facilities (additive between themselves)
+        power *= 1.0 + this.getFacilityBonus("click_power");
+
+        power *= this.getAchievementMultiplier("click_power");
+
+        // Flat bonuses on top of the multiplied power: IQ per owned student, and a share of the steady IQ/s (legendary facility)
+        const students = this.getTotalStudents();
+        for (const upgrade of this.getUpgrades("per_student_click")) {
+            power += upgrade.value * students;
+        }
+        for (const f of this.getFacilityEffects("click_ips_share")) {
+            power += this.calculateIQPerSecond(false) * f.effect_value;
         }
 
         for (const event of this.active_events) {
@@ -166,110 +217,112 @@ export class GameEngine {
         return power;
     }
 
+    /** Standard global upgrades multiply together, but past the soft cap they only count by sqrt */
+    softCapGlobalUpgrades(mult) {
+        const { cap, exponent } = ECONOMY_CONFIG.global_upgrade_soft_cap;
+        return mult <= cap ? mult : cap * Math.pow(mult / cap, exponent);
+    }
+
+    /**
+     * Multiplier applied to all IQ/s: facilities, capped upgrades, achievements, certificates, prestige upgrades
+     * @param {boolean} includeEvents - false gives the steady rate (used for offline progress)
+     */
+    getGlobalMultiplier(includeEvents = true) {
+        // Facilities (additive between themselves)
+        let mult = 1.0 + this.getFacilityBonus("global_multiplier");
+
+        // Standard global upgrades (multiplicative, soft-capped)
+        let upgradeMult = 1.0;
+        for (const upgrade of this.getUpgrades("global_multiplier")) {
+            upgradeMult *= upgrade.value;
+        }
+        mult *= this.softCapGlobalUpgrades(upgradeMult);
+
+        mult *= this.getAchievementMultiplier("global_multiplier");
+
+        if (this.certificates > 0) {
+            mult *= this.getCertificateMultiplier();
+        }
+
+        // Prestige synergy (outside the soft cap): bonus per graduation / certificate, or compounding per graduation
+        for (const upgrade of this.getUpgrades("prestige_synergy")) {
+            const units = upgrade.per === "certificate" ? this.certificates : this.graduations;
+            mult *= 1.0 + upgrade.value * units;
+        }
+        for (const upgrade of this.getUpgrades("prestige_compound")) {
+            mult *= Math.pow(upgrade.value, Math.min(this.graduations, upgrade.cap));
+        }
+
+        if (includeEvents) {
+            for (const event of this.active_events) {
+                if (event.type === "student_bonus" || event.type === "teacher_boost") {
+                    mult *= event.multiplier;
+                }
+            }
+        }
+
+        return mult;
+    }
+
+    /** 1 + teacher bonuses for one student type; regular teachers stop at the synergy cap */
+    getTeacherSynergy(studentId) {
+        let regular = 0.0;
+        let exempt = 0.0;
+        for (const teacherData of TEACHERS) {
+            const count = this.teachers[teacherData.id] || 0;
+            if (count === 0 || !(teacherData.targets || []).includes(studentId)) continue;
+            const bonus = (teacherData.bonus_per_unit || 0.10) * (1 + (teacherData.prestige_scale || 0) * this.graduations) * count;
+            if (teacherData.cap_exempt) exempt += bonus;
+            else regular += bonus;
+        }
+        return 1.0 + Math.min(regular, ECONOMY_CONFIG.teacher_synergy_cap) + exempt;
+    }
+
+    /** Per-unit multiplier of one student type before global multipliers: teachers, upgrades, legendary traits */
+    getStudentMultiplier(studentData, count) {
+        let mult = this.getTeacherSynergy(studentData.id);
+
+        for (const upgrade of this.getUpgrades("student_multiplier")) {
+            if ((upgrade.target || []).includes(studentData.id)) mult *= upgrade.value;
+        }
+
+        // Legendary traits
+        if (studentData.milestone_every) {
+            mult *= Math.pow(studentData.milestone_mult, Math.floor(count / studentData.milestone_every));
+        }
+        if (studentData.prestige_scale) {
+            mult *= 1 + studentData.prestige_scale * this.graduations;
+        }
+        if (studentData.crowd_scale) {
+            mult *= 1 + studentData.crowd_scale * this.getTotalStudents();
+        }
+        return mult;
+    }
+
     /**
      * @param {boolean} includeEvents - false gives the steady rate (used for offline progress)
      */
     calculateIQPerSecond(includeEvents = true) {
         let total = 0.0;
 
-        // 1. Calculate production from students (with teacher synergy)
+        // 1. Production from students (teacher synergy, upgrades, legendary traits)
         for (const studentData of STUDENTS) {
-            const studentId = studentData.id;
-            const count = this.students[studentId] || 0;
+            const count = this.students[studentData.id] || 0;
             if (count > 0) {
-                let baseProduction = studentData.base_production * count;
-
-                // Apply teacher synergy multipliers
-                let synergyMult = 1.0;
-                for (const teacherData of TEACHERS) {
-                    const targets = teacherData.targets || [];
-                    if (targets.includes(studentId)) {
-                        const teacherCount = this.teachers[teacherData.id] || 0;
-                        if (teacherCount > 0) {
-                            const bonus = teacherData.bonus_per_unit || 0.10;
-                            synergyMult += teacherCount * bonus;
-                        }
-                    }
-                }
-
-                // Apply student-specific upgrade multipliers
-                let upgradeMult = 1.0;
-                for (const [upgradeId, purchased] of Object.entries(this.upgrades)) {
-                    if (purchased) {
-                        const upgrade = UPGRADES.find(u => u.id === upgradeId);
-                        if (upgrade && upgrade.type === "student_multiplier") {
-                            const target = upgrade.target || [];
-                            if (target.includes(studentId)) {
-                                upgradeMult *= upgrade.value;
-                            }
-                        }
-                    }
-                }
-
-                total += baseProduction * synergyMult * upgradeMult;
+                total += studentData.base_production * count * this.getStudentMultiplier(studentData, count);
             }
         }
 
-        // 2. Calculate production from teachers themselves
+        // 2. Production from teachers themselves
         for (const teacherData of TEACHERS) {
-            const teacherId = teacherData.id;
-            const count = this.teachers[teacherId] || 0;
+            const count = this.teachers[teacherData.id] || 0;
             if (count > 0) {
                 total += teacherData.base_production * count;
             }
         }
 
-        // 3. Apply global multipliers (Facilities, Upgrades, Achievements, Prestige)
-        let globalMult = 1.0;
-
-        // Facilities (Additive)
-        let facilitiesMult = 1.0;
-        for (const facility of FACILITIES) {
-            if (this.facilities[facility.id]) {
-                if (facility.effect_type === "global_multiplier") {
-                    facilitiesMult += (facility.effect_value - 1.0);
-                }
-            }
-        }
-        globalMult *= facilitiesMult;
-
-        // Global upgrades
-        for (const [upgradeId, purchased] of Object.entries(this.upgrades)) {
-            if (purchased) {
-                const upgrade = UPGRADES.find(u => u.id === upgradeId);
-                if (upgrade && upgrade.type === "global_multiplier") {
-                    globalMult *= upgrade.value;
-                }
-            }
-        }
-
-        // Achievement bonuses
-        for (const [achId, unlocked] of Object.entries(this.achievements)) {
-            if (unlocked) {
-                const ach = ACHIEVEMENTS.find(a => a.id === achId);
-                if (ach && ach.reward_type === "global_multiplier") {
-                    globalMult *= ach.reward_value;
-                }
-            }
-        }
-
-        // Certificate bonuses (prestige)
-        if (this.certificates > 0) {
-            globalMult *= this.getCertificateMultiplier();
-        }
-
-        // Active event bonuses
-        if (includeEvents) {
-            for (const event of this.active_events) {
-                if (event.type === "student_bonus" || event.type === "teacher_boost") {
-                    globalMult *= event.multiplier;
-                }
-            }
-        }
-
-        total *= globalMult;
-
-        return total;
+        // 3. Global multipliers
+        return total * this.getGlobalMultiplier(includeEvents);
     }
 
     calculateBuildingCost(buildingType, buildingId) {
@@ -396,9 +449,7 @@ export class GameEngine {
             return false;
         }
 
-        // Calculate certificates earned
-        const threshold = this.getGraduationThreshold();
-        const newCertificates = Math.floor(this.lifetime_iq / threshold);
+        const newCertificates = this.getCertificatesForGraduation();
 
         // Reset game state
         this.iq = 0.0;
@@ -514,75 +565,8 @@ export class GameEngine {
         const studentData = STUDENTS.find(s => s.id === studentId);
         if (!studentData) return 0;
 
-        let production = studentData.base_production;
-
-        // Apply teacher synergy multipliers
-        let synergyMult = 1.0;
-        for (const teacherData of TEACHERS) {
-            const targets = teacherData.targets || [];
-            if (targets.includes(studentId)) {
-                const teacherCount = this.teachers[teacherData.id] || 0;
-                if (teacherCount > 0) {
-                    const bonus = teacherData.bonus_per_unit || 0.10;
-                    synergyMult += teacherCount * bonus;
-                }
-            }
-        }
-
-        // Apply student-specific upgrade multipliers
-        let upgradeMult = 1.0;
-        for (const [upgradeId, purchased] of Object.entries(this.upgrades)) {
-            if (purchased) {
-                const upgrade = UPGRADES.find(u => u.id === upgradeId);
-                if (upgrade && upgrade.type === "student_multiplier") {
-                    const target = upgrade.target || [];
-                    if (target.includes(studentId)) {
-                        upgradeMult *= upgrade.value;
-                    }
-                }
-            }
-        }
-
-        // Apply global multipliers
-        let globalMult = 1.0;
-
-        // Facilities (Additive)
-        let facilitiesMult = 1.0;
-        for (const facility of FACILITIES) {
-            if (this.facilities[facility.id]) {
-                if (facility.effect_type === "global_multiplier") {
-                    facilitiesMult += (facility.effect_value - 1.0);
-                }
-            }
-        }
-        globalMult *= facilitiesMult;
-
-        // Global upgrades
-        for (const [upgradeId, purchased] of Object.entries(this.upgrades)) {
-            if (purchased) {
-                const upgrade = UPGRADES.find(u => u.id === upgradeId);
-                if (upgrade && upgrade.type === "global_multiplier") {
-                    globalMult *= upgrade.value;
-                }
-            }
-        }
-
-        // Achievement bonuses
-        for (const [achId, unlocked] of Object.entries(this.achievements)) {
-            if (unlocked) {
-                const ach = ACHIEVEMENTS.find(a => a.id === achId);
-                if (ach && ach.reward_type === "global_multiplier") {
-                    globalMult *= ach.reward_value;
-                }
-            }
-        }
-
-        // Certificate bonuses (prestige)
-        if (this.certificates > 0) {
-            globalMult *= this.getCertificateMultiplier();
-        }
-
-        return production * synergyMult * upgradeMult * globalMult;
+        const count = this.students[studentId] || 0;
+        return studentData.base_production * this.getStudentMultiplier(studentData, count) * this.getGlobalMultiplier(false);
     }
 
     formatNumber(num) {

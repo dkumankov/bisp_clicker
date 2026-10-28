@@ -1,8 +1,8 @@
-import { GameEngine } from './game-engine.js?v=11';
-import { SaveManager, MIN_OFFLINE_SECONDS } from './save-manager.js?v=11';
-import { SoundManager } from './sound-manager.js?v=11';
-import { fetchLeaderboard, postScore, validateName, cleanName, timeAgo, SUBMIT_INTERVAL_MS } from './leaderboard.js?v=11';
-import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, COMBO_CONFIG, GOLDEN_CONFIG, CAMPUS_STAGES, MILESTONES } from './data.js?v=11';
+import { GameEngine } from './game-engine.js?v=12';
+import { SaveManager, MIN_OFFLINE_SECONDS } from './save-manager.js?v=12';
+import { SoundManager } from './sound-manager.js?v=12';
+import { fetchLeaderboard, postScore, validateName, cleanName, timeAgo, SUBMIT_INTERVAL_MS } from './leaderboard.js?v=12';
+import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, COMBO_CONFIG, GOLDEN_CONFIG, CAMPUS_STAGES, MILESTONES } from './data.js?v=12';
 
 // Initialize game engine, save manager, and sound manager
 const game = new GameEngine();
@@ -731,8 +731,9 @@ function updateCombo() {
 
 // ===== Golden School Badge =====
 function scheduleGolden(first = false) {
-    const lo = first ? GOLDEN_CONFIG.first_min_delay : GOLDEN_CONFIG.min_delay;
-    const hi = first ? GOLDEN_CONFIG.first_max_delay : GOLDEN_CONFIG.max_delay;
+    const range = game.getGoldenDelayRange();
+    const lo = first ? GOLDEN_CONFIG.first_min_delay : range.min;
+    const hi = first ? GOLDEN_CONFIG.first_max_delay : range.max;
     const delay = lo + Math.random() * (hi - lo);
     nextGoldenAt = performance.now() + delay * 1000;
 }
@@ -751,7 +752,7 @@ function updateGolden(now) {
     buffBar.classList.toggle('hidden', !buff);
     if (buff) {
         $('buff-time').textContent = Math.ceil(buff.time_remaining) + 's';
-        $('buff-progress-fill').style.width = (buff.time_remaining / GOLDEN_CONFIG.duration * 100) + '%';
+        $('buff-progress-fill').style.width = (buff.time_remaining / buff.duration * 100) + '%';
     }
 }
 
@@ -784,7 +785,7 @@ function handleGoldenCatch(e) {
     burst(x, y, 18, ['🌟', '✨', '⭐', '🏅'], 140);
     showToast({
         key: 'golden', icon: '🌟', kind: 'gold',
-        title: `Golden Badge! x${GOLDEN_CONFIG.multiplier} IQ/s for ${GOLDEN_CONFIG.duration}s`
+        title: `Golden Badge! x${GOLDEN_CONFIG.multiplier} IQ/s for ${Math.round(game.getGoldenDuration())}s`
     });
 }
 

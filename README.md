@@ -37,7 +37,7 @@ Start by clicking to study, then hire students and teachers, build real BISP fac
 
 ### 🌟 Fun Extras
 - **Combo multiplier**: Tap fast to build a streak. At 10 / 25 / 50 / 100 taps you get x1.25 / x1.5 / x2 / x3 IQ per click.
-- **Golden School Badge**: A 🏅 appears at random. Catch it for **x7 IQ/s for 30 seconds**!
+- **Golden School Badge**: A 🏅 appears at random. Catch it for **x3.5 IQ/s for 30 seconds**! (The first one never shows up in the first 3 minutes.)
 - **Campus stages**: Your school grows from a Study Corner to a Genius City as you earn IQ.
 - **Milestones**: Confetti, sounds and toasts when you reach big IQ or click numbers.
 - **While you were away**: Come back to a "Welcome back!" screen showing the IQ earned offline (up to 24 hours).
