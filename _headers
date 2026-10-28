@@ -1,0 +1,20 @@
+# Cloudflare Pages custom headers.
+# Rules are additive in Pages (same header from several matching rules gets merged),
+# so no catch-all: only index.html is revalidated (Pages default for it), and
+# assets are immutable because every reference is name?v=<content hash> (see build.js):
+# changed file => new URL, the old URL can be cached forever.
+
+/
+  Cache-Control: no-cache
+
+/index.html
+  Cache-Control: no-cache
+
+/*.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable

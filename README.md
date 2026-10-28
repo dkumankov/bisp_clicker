@@ -58,6 +58,22 @@ Progress is stored in your browser (`localStorage`). The save format is backward
 
 
 
+## 🚢 Releasing (cache busting)
+
+Hosting is Cloudflare Pages: push to `main` deploys the repo root as-is, there is no build on the server.
+Every CSS/JS/image reference is stamped with a content hash (`app.js?v=5f259cd3`) by a small dependency-free script, so players always get a fully fresh, consistent set of files and unchanged files stay cached forever.
+
+```bash
+node build.js          # re-stamp index.html and all imports (idempotent, only touches what changed)
+git add -A && git commit -m "..." && git push
+```
+
+- Never edit `?v=...` by hand; just run `node build.js` after any change to a `.js`/`.css`/asset file.
+- `node build.js --check` changes nothing and exits 1 if a stamp is stale. Optional guard against forgetting: `echo 'node build.js --check' > .git/hooks/pre-push && chmod +x .git/hooks/pre-push`.
+- A module's hash includes the stamps of its own imports, so editing `data.js` automatically changes the URLs of everything that imports it.
+- `_headers` makes `index.html` always revalidate (`no-cache`) and the stamped assets `immutable` for one year.
+- New files: just reference them from `index.html` or via a relative `import` in a JS file, the script discovers them by following the references.
+
 ## 🛠️ Technologies Used
 
 - **HTML5**: For the game structure.
