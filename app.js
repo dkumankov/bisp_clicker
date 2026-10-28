@@ -613,8 +613,8 @@ function createBuildingCard({ key, data, count, cost, label, buy, toast, sound =
     return card;
 }
 
-function createListItem({ key, data, owned, cost, label, ownedLabel, buy, toast }) {
-    const canAfford = !owned && game.canAfford(cost);
+function createListItem({ key, data, owned, cost, label, ownedLabel, buy, toast, locked = false }) {
+    const canAfford = !owned && !locked && game.canAfford(cost);
     const item = document.createElement('div');
     item.className = `list-item ${owned ? 'owned' : (canAfford ? 'affordable' : '')}`;
     item.dataset.key = key;
@@ -626,9 +626,9 @@ function createListItem({ key, data, owned, cost, label, ownedLabel, buy, toast 
         </div>
         ${owned
             ? `<div class="list-item-status">${ownedLabel}</div>`
-            : `<button class="list-item-button ${canAfford ? 'affordable' : ''}">${label}</button>`}
+            : `<button class="list-item-button ${canAfford ? 'affordable' : ''}" ${locked ? 'disabled' : ''}>${locked ? '🔒 Locked' : label}</button>`}
     `;
-    if (!owned) {
+    if (!owned && !locked) {
         purchaseHandlers.set(key, () => attemptPurchase(key, buy, { toast, sound: 'upgrade' }));
     }
     return item;
@@ -687,13 +687,14 @@ function isUpgradeAvailable(upgrade) {
 }
 
 function renderUpgrades() {
-    // Cheapest first, hide upgrades whose requirement isn't met yet
-    const available = UPGRADES.filter(isUpgradeAvailable).sort((a, b) => a.cost - b.cost);
+    // Cheapest first, show ALL upgrades; locked ones (unmet prerequisite) render disabled
+    const available = [...UPGRADES].sort((a, b) => a.cost - b.cost);
     upgradesList.replaceChildren(...available.map(upgrade => createListItem({
         key: `upgrade:${upgrade.id}`,
         data: upgrade,
         owned: game.upgrades[upgrade.id],
         cost: upgrade.cost,
+        locked: !isUpgradeAvailable(upgrade),
         label: `Buy: ${game.formatNumberShort(upgrade.cost)} IQ`,
         ownedLabel: 'PURCHASED',
         buy: () => game.purchaseUpgrade(upgrade.id),
