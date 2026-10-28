@@ -17,7 +17,12 @@ const VOID = ['#b57bff', '#ffd27a', '#ffffff', '#7a3cff'];
 const NUKE = ['#fff7a8', '#ffb300', '#ff6a00', '#ff2d2d'];
 const RAINBOW = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#1dd1a1', '#ffffff'];
 const WARM = ['#ffb347', '#ffe08a', '#ff9f43'];
-const PALETTE = { 1: WARM, 2: WARM, 3: WARM.concat(FIRE), 4: FIRE, 5: FIRE, 6: PLASMA, 7: FIRE.concat(ICE), 8: VOID, 9: NUKE, 10: RAINBOW };
+// Tiers 1-4 follow the panel fills (orange, red, purple, rainbow) — keep in sync with the
+// "Tier palette" block in style.css, which is the source of truth for panel AND button.
+const T1 = ['#ff9f43', '#ffc27a', '#ffe0b8'];
+const T2 = ['#ee5253', '#ff7b7b', '#ffb3b3'];
+const T3 = ['#9c27b0', '#d36bff', '#f0b3ff'];
+const PALETTE = { 1: T1, 2: T2, 3: T3, 4: RAINBOW, 5: FIRE, 6: PLASMA, 7: FIRE.concat(ICE), 8: VOID, 9: NUKE, 10: RAINBOW };
 
 // Spawn rates (particles/second) per tier. Higher tiers combine the lower ideas.
 // btn*: effects that live on the Study button itself and grow with the tier

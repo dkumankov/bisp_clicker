@@ -519,10 +519,26 @@ button:focus-visible,
     border-radius: 3px;
 }
 
-.combo[data-tier="1"] { background: rgba(255, 159, 67, 0.85); }
-.combo[data-tier="2"] { background: rgba(238, 82, 83, 0.9); }
-.combo[data-tier="3"] { background: rgba(156, 39, 176, 0.92); }
-.combo[data-tier="4"] { background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3); }
+/* ===== Tier palette: the ONE source of truth for the combo panel AND the Study button =====
+   Declared on both body[data-combo-tier] and .combo[data-tier], so the panel and the button read
+   exactly the same values. Change a tier here and both follow.
+   --tc-body  surface fill          --tc-aura  halo / inner glow fill
+   --ga/--gb  glow colours (rgb)    --tp       breath half-period (animation-direction: alternate)
+   --te       breath easing         --tox      horizontal split of the two glows (fire | ice)
+   --ts       halo spin period (tiers 8, 10)
+   The particle colours of combo-fx.js (PALETTE) mirror these tiers. */
+:is(body[data-combo-tier="1"], .combo[data-tier="1"]) { --tc-body: rgba(255, 159, 67, 0.85); --ga: 255, 159, 67; --gb: 255, 159, 67; --tp: 1.3s; --gr: 18px; --gs: 2px; --gi: 0.3; --bsc: 1.015; }
+:is(body[data-combo-tier="2"], .combo[data-tier="2"]) { --tc-body: rgba(238, 82, 83, 0.9); --ga: 238, 82, 83; --gb: 238, 82, 83; --tp: 1.1s; --gr: 22px; --gs: 3px; --gi: 0.45; --bsc: 1.025; }
+:is(body[data-combo-tier="3"], .combo[data-tier="3"]) { --tc-body: rgba(156, 39, 176, 0.92); --ga: 156, 39, 176; --gb: 156, 39, 176; --tp: 0.92s; --gr: 26px; --gs: 5px; --gi: 0.62; --bsc: 1.035; }
+:is(body[data-combo-tier="4"], .combo[data-tier="4"]) { --tc-body: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3); --ga: 255, 107, 107; --gb: 72, 219, 251; --tp: 0.8s; --gr: 29px; --gs: 6px; --gi: 0.78; --bsc: 1.045; }
+:is(body[data-combo-tier="5"], .combo[data-tier="5"]) { --tc-body: linear-gradient(0deg, #7a0d0d, #d8340c 55%, #ff8a1f); --tc-aura: radial-gradient(ellipse at 50% 100%, rgba(255, 150, 0, 0.95), rgba(255, 60, 0, 0) 72%); --ga: 255, 150, 0; --gb: 255, 60, 0; --tp: 0.7s; --te: ease-in-out; --gr: 34px; --gs: 8px; --gi: 0.9; --bsc: 1.055; }
+:is(body[data-combo-tier="6"], .combo[data-tier="6"]) { --tc-body: linear-gradient(135deg, #12063d, #3a1b9a 50%, #0b2a7a); --tc-aura: radial-gradient(ellipse at center, rgba(127, 208, 255, 0.95), rgba(181, 123, 255, 0.6) 55%, transparent 75%); --ga: 127, 208, 255; --gb: 181, 123, 255; --tp: 0.17s; --te: steps(2, end); --gr: 36px; --gs: 9px; --gi: 0.9; --bsc: 1.05; }
+:is(body[data-combo-tier="7"], .combo[data-tier="7"]) { --tc-body: linear-gradient(90deg, #b8300a, #ff8a1f 42%, #9ff1ff 58%, #2a6bff); --tc-aura: linear-gradient(90deg, rgba(255, 106, 0, 0.95), rgba(255, 255, 255, 0.4) 50%, rgba(90, 169, 255, 0.95)); --ga: 255, 106, 0; --gb: 90, 169, 255; --tox: 14px; --tp: 1s; --gr: 38px; --gs: 9px; --gi: 0.95; --bsc: 1.05; }
+:is(body[data-combo-tier="8"], .combo[data-tier="8"]) { --tc-body: radial-gradient(ellipse at 50% 50%, #000 0 22%, #0e0626 55%, #1d0a45); --tc-aura: conic-gradient(#7a3cff, #ff9d2e, #7a3cff, #2a0a6a, #ff9d2e, #7a3cff); --ga: 122, 60, 255; --gb: 255, 157, 46; --tp: 1.2s; --ts: 4s; --gr: 40px; --gs: 10px; --gi: 0.95; --bsc: 1.04; }
+:is(body[data-combo-tier="9"], .combo[data-tier="9"]) { --tc-body: radial-gradient(circle at 50% 50%, #fffbd0 0 8%, #ffb300 30%, #e03a00 65%, #5a0a0a); --tc-aura: radial-gradient(ellipse at center, rgba(255, 190, 40, 1), rgba(255, 60, 0, 0.7) 55%, transparent 75%); --ga: 255, 190, 40; --gb: 255, 60, 0; --tp: 0.45s; --gr: 44px; --gs: 12px; --gi: 1; --bsc: 1.07; }
+:is(body[data-combo-tier="10"], .combo[data-tier="10"]) { --tc-body: linear-gradient(135deg, #1a0640, #000); --tc-aura: conic-gradient(#ff6b6b, #feca57, #48dbfb, #ff9ff3, #1dd1a1, #ff6b6b); --ga: 255, 159, 243; --gb: 72, 219, 251; --tp: 0.4s; --ts: 2s; --gr: 46px; --gs: 12px; --gi: 1; }
+:is(body[data-combo-tier], .combo[data-tier]) { --te: ease-in-out; --tox: 0px; }
+.combo[data-tier="1"], .combo[data-tier="2"], .combo[data-tier="3"], .combo[data-tier="4"] { background: var(--tc-body); }
 
 /* ===== Graduate ===== */
 .graduate-button {
@@ -1518,10 +1534,10 @@ button:focus-visible,
 .combo:is([data-tier="5"],[data-tier="6"],[data-tier="7"],[data-tier="8"],[data-tier="9"],[data-tier="10"]) .combo-fx i { display: block; will-change: transform, opacity; }
 
 /* -- 5 · Scholar (200): living flame -- */
-.combo[data-tier="5"] .combo-fx { background: linear-gradient(0deg, #7a0d0d, #d8340c 55%, #ff8a1f); }
+.combo[data-tier="5"] .combo-fx { background: var(--tc-body); }
 .combo[data-tier="5"]::before {
-    background: radial-gradient(ellipse at 50% 100%, rgba(255, 150, 0, 0.95), rgba(255, 60, 0, 0) 72%);
-    animation: cx-aura 0.7s ease-in-out infinite alternate;
+    background: var(--tc-aura);
+    animation: cx-aura var(--tp) var(--te) infinite alternate;
 }
 .combo[data-tier="5"] .combo-fx i {
     left: -10%; right: -10%; bottom: -30%; height: 100%;
@@ -1545,10 +1561,10 @@ button:focus-visible,
 
 /* -- 6 · Professor (300): plasma, arcs, vibration -- */
 .combo[data-tier="6"] { animation: cx-tremor 0.09s linear infinite; }
-.combo[data-tier="6"] .combo-fx { background: linear-gradient(135deg, #12063d, #3a1b9a 50%, #0b2a7a); }
+.combo[data-tier="6"] .combo-fx { background: var(--tc-body); }
 .combo[data-tier="6"]::before {
-    background: radial-gradient(ellipse at center, rgba(127, 208, 255, 0.95), rgba(181, 123, 255, 0.6) 55%, transparent 75%);
-    animation: cx-flicker 0.17s steps(2, end) infinite;
+    background: var(--tc-aura);
+    animation: cx-flicker var(--tp) var(--te) infinite;
 }
 .combo[data-tier="6"] .combo-fx i:nth-child(1) {
     inset: -80%;
@@ -1564,10 +1580,10 @@ button:focus-visible,
 }
 
 /* -- 7 · Genius (400): fire + ice -- */
-.combo[data-tier="7"] .combo-fx { background: linear-gradient(90deg, #b8300a, #ff8a1f 42%, #9ff1ff 58%, #2a6bff); }
+.combo[data-tier="7"] .combo-fx { background: var(--tc-body); }
 .combo[data-tier="7"]::before {
-    background: linear-gradient(90deg, rgba(255, 106, 0, 0.95), rgba(255, 255, 255, 0.4) 50%, rgba(90, 169, 255, 0.95));
-    animation: cx-aura 1s ease-in-out infinite alternate;
+    background: var(--tc-aura);
+    animation: cx-aura var(--tp) var(--te) infinite alternate;
 }
 .combo[data-tier="7"] .combo-fx i:nth-child(1) {
     left: 0; width: 55%; bottom: -30%; top: 0;
@@ -1583,11 +1599,11 @@ button:focus-visible,
 
 /* -- 8 · Prodigy (500): black hole -- */
 .combo[data-tier="8"] { animation: cx-warp 2.4s ease-in-out infinite; }
-.combo[data-tier="8"] .combo-fx { background: radial-gradient(ellipse at 50% 50%, #000 0 22%, #0e0626 55%, #1d0a45); }
+.combo[data-tier="8"] .combo-fx { background: var(--tc-body); }
 .combo[data-tier="8"]::before {
     inset: -14px;
-    background: conic-gradient(#7a3cff, #ff9d2e, #7a3cff, #2a0a6a, #ff9d2e, #7a3cff);
-    animation: cx-spin 4s linear infinite;
+    background: var(--tc-aura);
+    animation: cx-spin var(--ts) linear infinite;
 }
 .combo[data-tier="8"] .combo-fx i:nth-child(1) {
     left: 50%; top: 50%; width: 280px; height: 280px; margin: -140px 0 0 -140px;
@@ -1604,11 +1620,11 @@ button:focus-visible,
 
 /* -- 9 · Legend (750): nuclear blast -- */
 .combo[data-tier="9"] { animation: cx-tremor 0.12s linear infinite; }
-.combo[data-tier="9"] .combo-fx { background: radial-gradient(circle at 50% 50%, #fffbd0 0 8%, #ffb300 30%, #e03a00 65%, #5a0a0a); }
+.combo[data-tier="9"] .combo-fx { background: var(--tc-body); }
 .combo[data-tier="9"]::before {
     inset: -16px;
-    background: radial-gradient(ellipse at center, rgba(255, 190, 40, 1), rgba(255, 60, 0, 0.7) 55%, transparent 75%);
-    animation: cx-aura 0.45s ease-in-out infinite alternate;
+    background: var(--tc-aura);
+    animation: cx-aura var(--tp) var(--te) infinite alternate;
 }
 .combo[data-tier="9"] .combo-fx i:nth-child(1) {
     left: 50%; top: 50%; width: 140px; height: 140px; margin: -70px 0 0 -70px;
@@ -1627,11 +1643,11 @@ button:focus-visible,
 
 /* -- 10 · Absolute Mind (1000): supernova = black hole + blast + halo -- */
 .combo[data-tier="10"] { animation: cx-heart 0.8s ease-in-out infinite; }
-.combo[data-tier="10"] .combo-fx { background: linear-gradient(135deg, #1a0640, #000); }
+.combo[data-tier="10"] .combo-fx { background: var(--tc-body); }
 .combo[data-tier="10"]::before {
     inset: -18px;
-    background: conic-gradient(#ff6b6b, #feca57, #48dbfb, #ff9ff3, #1dd1a1, #ff6b6b);
-    animation: cx-spin 2s linear infinite;
+    background: var(--tc-aura);
+    animation: cx-spin var(--ts) linear infinite;
 }
 .combo[data-tier="10"] .combo-fx i:nth-child(1) {
     inset: -90%;
@@ -1664,8 +1680,11 @@ button:focus-visible,
     45% { transform: scale(1.1); } 70% { transform: scale(1); }
 }
 
-/* -- The Study button joins in from the very first tier (1-4 warm glow, see below) and grows:
-      5 warm glow · 6 electric · 7 cold aura · 8 gravity pull · 9 fire · 10 heartbeat + rainbow ring -- */
+/* ===== Study button = the combo panel, on a disc =====
+   Every colour, glow, halo and breath period comes from the tier palette above, so the button
+   always matches the panel. Surface layers (.study-fx, tiers 5-10) repeat the panel's .combo-fx
+   layers; tiers 1-4 have no extra layers on the panel, so the button is just the tier fill.
+   Glow = box-shadow (one element), the rest animates transform / opacity only. */
 .study-button::after {
     content: '';
     position: absolute;
@@ -1674,121 +1693,9 @@ button:focus-visible,
     opacity: 0;
     pointer-events: none;
 }
-/* 1-4 · Warm-up..Straight-A: the same warm glow, ramped continuously by variables
-      (--lr blur, --ls spread, --la/--lb min/max alpha, --li inner glow, --lt breath period).
-      Each tier is a little brighter and faster, so tier 4 hands over smoothly to Scholar. */
-body[data-combo-tier="1"] .study-button { --lr: 18px; --ls: 2px; --la: 0.12; --lb: 0.3; --li: 0.15; --lt: 1.3s; border-color: rgba(255, 240, 214, 0.7); }
-body[data-combo-tier="2"] .study-button { --lr: 22px; --ls: 3px; --la: 0.22; --lb: 0.45; --li: 0.3; --lt: 1.1s; border-color: rgba(255, 236, 200, 0.8); }
-body[data-combo-tier="3"] .study-button { --lr: 26px; --ls: 5px; --la: 0.32; --lb: 0.62; --li: 0.5; --lt: 0.92s; border-color: rgba(255, 230, 185, 0.9); }
-body[data-combo-tier="4"] .study-button { --lr: 29px; --ls: 6px; --la: 0.45; --lb: 0.78; --li: 0.75; --lt: 0.8s; border-color: #ffe6b0; }
-body:is([data-combo-tier="1"],[data-combo-tier="2"],[data-combo-tier="3"],[data-combo-tier="4"]) .study-button {
-    animation: cx-btn-low var(--lt) ease-in-out infinite alternate;
-}
-body:is([data-combo-tier="1"],[data-combo-tier="2"],[data-combo-tier="3"],[data-combo-tier="4"]) .study-button::after {
-    background: radial-gradient(circle, rgba(255, 220, 140, 0.45), rgba(255, 120, 0, 0.15) 60%, transparent 75%);
-    animation: cx-btn-low-glow var(--lt) ease-in-out infinite alternate;
-}
-@keyframes cx-btn-low {
-    from { box-shadow: 0 0 calc(var(--lr) * 0.6) calc(var(--ls) * 0.4) rgba(255, 160, 50, var(--la)), 0 8px 36px rgba(245, 87, 108, 0.45), inset 0 -8px 20px rgba(0, 0, 0, 0.12); }
-    to { box-shadow: 0 0 var(--lr) var(--ls) rgba(255, 170, 50, var(--lb)), 0 10px 44px rgba(245, 87, 108, 0.6), inset 0 -8px 20px rgba(0, 0, 0, 0.12); }
-}
-@keyframes cx-btn-low-glow { from { opacity: calc(var(--li) * 0.3); } to { opacity: var(--li); } }
-/* 5 · Scholar: warm glow breathing with the panel (0.7s alternate) */
-body[data-combo-tier="5"] .study-button {
-    border-color: #ffe6b0;
-    box-shadow: 0 0 22px 4px rgba(255, 150, 40, 0.55), 0 8px 36px rgba(245, 87, 108, 0.45), inset 0 -8px 20px rgba(0, 0, 0, 0.12);
-    animation: cx-btn-warm 0.7s ease-in-out infinite alternate;
-}
-body[data-combo-tier="5"] .study-button::after {
-    background: radial-gradient(circle, rgba(255, 220, 140, 0.45), rgba(255, 120, 0, 0.15) 60%, transparent 75%);
-    animation: cx-btn-glow 0.7s ease-in-out infinite alternate;
-}
-/* 6 · Scientist: stronger glow + electric flicker */
-body[data-combo-tier="6"] .study-button {
-    border-color: #d6ecff;
-    box-shadow: 0 0 28px 6px rgba(255, 150, 60, 0.6), 0 0 56px 12px rgba(127, 208, 255, 0.45), inset 0 -8px 20px rgba(0, 0, 0, 0.12);
-    animation: cx-btn-volt 0.5s ease-in-out infinite alternate;
-}
-body[data-combo-tier="6"] .study-button::after {
-    background: radial-gradient(circle at 25% 30%, rgba(127, 208, 255, 0.55), transparent 45%), radial-gradient(circle at 78% 72%, rgba(181, 123, 255, 0.5), transparent 45%);
-    animation: cx-flicker 0.17s steps(2, end) infinite;
-}
-/* 7 · Prodigy: cold aura + ice rim, sparks more visible */
-body[data-combo-tier="7"] .study-button {
-    border-color: #e6fbff;
-    box-shadow: 0 0 32px 8px rgba(120, 220, 255, 0.75), 0 0 70px 16px rgba(60, 120, 255, 0.45), inset 0 -8px 20px rgba(0, 0, 0, 0.12);
-    animation: cx-btn-cold 1s ease-in-out infinite alternate;
-}
-body[data-combo-tier="7"] .study-button::after {
-    background: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, 0.55) 50%, transparent 65%), radial-gradient(circle, transparent 50%, rgba(120, 220, 255, 0.4) 100%);
-    background-size: 220% 100%, 100% 100%;
-    animation: cx-btn-frost 1.8s linear infinite;
-}
-/* 8 · Mastermind: gravity pull toward the hole + swirling violet/gold ring */
-body[data-combo-tier="8"] .study-button {
-    border-color: #e8d8ff;
-    box-shadow: 0 0 34px 8px rgba(150, 90, 255, 0.8), 0 0 80px 18px rgba(255, 157, 46, 0.4), inset 0 -8px 20px rgba(0, 0, 0, 0.12);
-    animation: cx-btn-pull 2.4s ease-in-out infinite;
-}
-body[data-combo-tier="8"] .study-button::after {
-    background: conic-gradient(#7a3cff, #ff9d2e, #7a3cff, #2a0a6a, #ff9d2e, #7a3cff);
-    -webkit-mask-image: radial-gradient(circle, transparent 55%, #000 100%);
-    mask-image: radial-gradient(circle, transparent 55%, #000 100%);
-    opacity: 0.4;
-    animation: cx-spin 3s linear infinite;
-}
-@keyframes cx-btn-warm {
-    from { box-shadow: 0 0 16px 2px rgba(255, 150, 40, 0.4), 0 8px 36px rgba(245, 87, 108, 0.45), inset 0 -8px 20px rgba(0, 0, 0, 0.12); }
-    to { box-shadow: 0 0 30px 7px rgba(255, 170, 50, 0.7), 0 10px 44px rgba(245, 87, 108, 0.6), inset 0 -8px 20px rgba(0, 0, 0, 0.12); }
-}
-@keyframes cx-btn-glow { from { opacity: 0.3; } to { opacity: 1; } }
-@keyframes cx-btn-volt {
-    from { box-shadow: 0 0 22px 4px rgba(255, 150, 60, 0.5), 0 0 44px 8px rgba(127, 208, 255, 0.3), inset 0 -8px 20px rgba(0, 0, 0, 0.12); }
-    to { box-shadow: 0 0 34px 9px rgba(255, 170, 70, 0.75), 0 0 66px 16px rgba(127, 208, 255, 0.6), inset 0 -8px 20px rgba(0, 0, 0, 0.12); }
-}
-@keyframes cx-btn-cold {
-    from { box-shadow: 0 0 24px 5px rgba(120, 220, 255, 0.55), 0 0 56px 10px rgba(60, 120, 255, 0.3), inset 0 -8px 20px rgba(0, 0, 0, 0.12); }
-    to { box-shadow: 0 0 38px 10px rgba(150, 235, 255, 0.9), 0 0 84px 20px rgba(60, 120, 255, 0.55), inset 0 -8px 20px rgba(0, 0, 0, 0.12); }
-}
-@keyframes cx-btn-frost { 0% { background-position: -120% 0, 0 0; opacity: 0.7; } 50% { opacity: 1; } 100% { background-position: 220% 0, 0 0; opacity: 0.7; } }
-@keyframes cx-btn-pull {
-    0%, 100% { transform: translate(0, 0) scale(1); box-shadow: 0 0 28px 6px rgba(150, 90, 255, 0.65), 0 0 66px 14px rgba(255, 157, 46, 0.3), inset 0 -8px 20px rgba(0, 0, 0, 0.12); }
-    50% { transform: translate(0, -3px) scale(0.97, 1.02); box-shadow: 0 0 40px 10px rgba(150, 90, 255, 0.95), 0 0 92px 22px rgba(255, 157, 46, 0.5), inset 0 -8px 20px rgba(0, 0, 0, 0.12); }
-}
-body[data-combo-tier="9"] .study-button {
-    border-color: #fff2b0;
-    box-shadow: 0 0 34px 8px rgba(255, 170, 40, 0.85), 0 0 80px 22px rgba(255, 60, 0, 0.5), inset 0 -8px 20px rgba(0, 0, 0, 0.12);
-    animation: cx-btn-hot 0.45s ease-in-out infinite alternate;
-}
-body[data-combo-tier="9"] .study-button::after {
-    background: radial-gradient(circle, rgba(255, 240, 160, 0.75), rgba(255, 120, 0, 0.3) 60%, transparent 75%);
-    animation: cx-flicker 0.3s steps(2, end) infinite;
-}
-body[data-combo-tier="10"] .study-button {
-    border-color: #fff;
-    box-shadow: 0 0 40px 10px rgba(255, 130, 200, 0.85), 0 0 90px 26px rgba(72, 219, 251, 0.55), inset 0 -8px 20px rgba(0, 0, 0, 0.12);
-    animation: cx-heart 0.8s ease-in-out infinite;
-}
-body[data-combo-tier="10"] .study-button::after {
-    background: conic-gradient(#ff6b6b, #feca57, #48dbfb, #ff9ff3, #1dd1a1, #ff6b6b);
-    -webkit-mask-image: radial-gradient(circle, transparent 45%, #000 100%);
-    mask-image: radial-gradient(circle, transparent 45%, #000 100%);
-    opacity: 0.55;
-    animation: cx-spin 2.5s linear infinite;
-}
-@keyframes cx-btn-hot {
-    from { box-shadow: 0 0 30px 6px rgba(255, 170, 40, 0.75), 0 0 70px 16px rgba(255, 60, 0, 0.4), inset 0 -8px 20px rgba(0, 0, 0, 0.12); }
-    to { box-shadow: 0 0 44px 12px rgba(255, 200, 60, 0.95), 0 0 100px 30px rgba(255, 60, 0, 0.6), inset 0 -8px 20px rgba(0, 0, 0, 0.12); }
-}
-
-/* ===== Study button = the combo panel, on a disc (v17) =====
-   .study-fx (inside the button, under the text) carries the same living surface as .combo-fx:
-   flames · plasma rays · fire+ice · black hole · nuke core · supernova. The button body takes the
-   tier colour instead of the default pink, the glow breathes with the panel, and combo-fx.js
-   lands sparks and flares on the surface. Only transform/opacity/scale animate. */
 .study-fx { display: none; }
 .study-fx i { position: absolute; display: none; pointer-events: none; }
-body:is([data-combo-tier="1"],[data-combo-tier="2"],[data-combo-tier="3"],[data-combo-tier="4"],[data-combo-tier="5"],[data-combo-tier="6"],[data-combo-tier="7"],[data-combo-tier="8"],[data-combo-tier="9"],[data-combo-tier="10"]) .study-fx {
+body:is([data-combo-tier="5"],[data-combo-tier="6"],[data-combo-tier="7"],[data-combo-tier="8"],[data-combo-tier="9"],[data-combo-tier="10"]) .study-fx {
     display: block;
     position: absolute;
     inset: 0;
@@ -1798,7 +1705,7 @@ body:is([data-combo-tier="1"],[data-combo-tier="2"],[data-combo-tier="3"],[data-
     isolation: isolate;
     pointer-events: none;
 }
-body:is([data-combo-tier="1"],[data-combo-tier="2"],[data-combo-tier="3"],[data-combo-tier="4"],[data-combo-tier="5"],[data-combo-tier="6"],[data-combo-tier="7"],[data-combo-tier="8"],[data-combo-tier="9"],[data-combo-tier="10"]) .study-fx i {
+body:is([data-combo-tier="5"],[data-combo-tier="6"],[data-combo-tier="7"],[data-combo-tier="8"],[data-combo-tier="9"],[data-combo-tier="10"]) .study-fx i {
     display: block;
     will-change: transform, opacity;
 }
@@ -1808,38 +1715,54 @@ body[data-combo-tier]:not([data-combo-tier="0"]) .study-gain {
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85), 0 0 9px rgba(0, 0, 0, 0.55), 0 2px 14px rgba(0, 0, 0, 0.4);
 }
 body[data-combo-tier]:not([data-combo-tier="0"]) .study-text { color: #fff; }
+
+/* Body + glow, all tiers: fill and glow colours straight from the palette (static glow is the
+   reduced-motion fallback, the animation below breathes it). */
+body:is([data-combo-tier="1"],[data-combo-tier="2"],[data-combo-tier="3"],[data-combo-tier="4"],[data-combo-tier="5"],[data-combo-tier="6"],[data-combo-tier="7"],[data-combo-tier="8"],[data-combo-tier="9"],[data-combo-tier="10"]) .study-button {
+    background: var(--tc-body);
+    border-color: var(--tc-bd, rgba(255, 255, 255, 0.8));
+    box-shadow:
+        calc(var(--tox) * -1) 0 var(--gr) var(--gs) rgba(var(--ga), calc(var(--gi) * 0.8)),
+        var(--tox) 0 calc(var(--gr) * 2) calc(var(--gs) * 2) rgba(var(--gb), calc(var(--gi) * 0.5)),
+        inset 0 -8px 20px rgba(0, 0, 0, 0.12);
+    animation: cx-btn-glow var(--tp) var(--te) infinite alternate, cx-btn-breathe var(--tp) var(--te) infinite alternate;
+}
+body[data-combo-tier="5"] .study-button { --tc-bd: #ffe6b0; }
+body[data-combo-tier="6"] .study-button { --tc-bd: #d6ecff; }
+body[data-combo-tier="7"] .study-button { --tc-bd: #e6fbff; }
+body[data-combo-tier="8"] .study-button { --tc-bd: #e8d8ff; }
+body[data-combo-tier="9"] .study-button { --tc-bd: #fff2b0; }
+body[data-combo-tier="10"] .study-button { --tc-bd: #fff; }
+/* Same motion as the panel: tremor on 6 and 9, warp on 8, heartbeat on 10 */
+body[data-combo-tier="6"] .study-button { animation: cx-btn-glow var(--tp) var(--te) infinite alternate, cx-btn-breathe 0.5s ease-in-out infinite alternate, cx-tremor 0.09s linear infinite; }
+body[data-combo-tier="8"] .study-button { animation: cx-btn-glow var(--tp) var(--te) infinite alternate, cx-warp 2.4s ease-in-out infinite; }
+body[data-combo-tier="9"] .study-button { animation: cx-btn-glow var(--tp) var(--te) infinite alternate, cx-btn-breathe var(--tp) var(--te) infinite alternate, cx-tremor 0.12s linear infinite; }
+body[data-combo-tier="10"] .study-button { animation: cx-btn-glow var(--tp) var(--te) infinite alternate, cx-heart 0.8s ease-in-out infinite; }
+@keyframes cx-btn-glow {
+    from { box-shadow: calc(var(--tox) * -1) 0 calc(var(--gr) * 0.6) calc(var(--gs) * 0.4) rgba(var(--ga), calc(var(--gi) * 0.45)), var(--tox) 0 calc(var(--gr) * 1.4) calc(var(--gs) * 0.8) rgba(var(--gb), calc(var(--gi) * 0.3)), inset 0 -8px 20px rgba(0, 0, 0, 0.12); }
+    to { box-shadow: calc(var(--tox) * -1) 0 var(--gr) var(--gs) rgba(var(--ga), var(--gi)), var(--tox) 0 calc(var(--gr) * 2.2) calc(var(--gs) * 2) rgba(var(--gb), calc(var(--gi) * 0.65)), inset 0 -8px 20px rgba(0, 0, 0, 0.12); }
+}
 /* Breathing: size pulses with the glow (the independent `scale` property, so it never fights transform) */
 @keyframes cx-btn-breathe { from { scale: 1; } to { scale: var(--bsc, 1.03); } }
+@keyframes cx-btn-aura { from { opacity: 0.2; } to { opacity: 0.7; } }
 
-/* 1-4 · warming up: orange body, flames rise with --fo (opacity) and --fh (height) */
-body[data-combo-tier="1"] .study-button { background: linear-gradient(0deg, #e8503a, #ff9a3c); --fo: 0.25; --fh: 0.55; --bsc: 1.015; }
-body[data-combo-tier="2"] .study-button { background: linear-gradient(0deg, #e0401e, #ff9a2a); --fo: 0.45; --fh: 0.7; --bsc: 1.025; }
-body[data-combo-tier="3"] .study-button { background: linear-gradient(0deg, #c8300f, #ff8a1f); --fo: 0.65; --fh: 0.85; --bsc: 1.035; }
-body[data-combo-tier="4"] .study-button { background: linear-gradient(0deg, #a82010, #ff8a1f); --fo: 0.85; --fh: 1; --bsc: 1.045; }
-body:is([data-combo-tier="1"],[data-combo-tier="2"],[data-combo-tier="3"],[data-combo-tier="4"]) .study-button {
-    animation: cx-btn-low var(--lt) ease-in-out infinite alternate, cx-btn-breathe var(--lt) ease-in-out infinite alternate;
+/* Halo of the panel's ::before, reproduced inside the disc: 5 flame glow from below · 6 plasma ·
+   7 fire|ice · 9 nuclear (same fill, same period) */
+body:is([data-combo-tier="5"],[data-combo-tier="6"],[data-combo-tier="7"],[data-combo-tier="9"]) .study-button::after {
+    background: var(--tc-aura);
+    opacity: 0.45;
+    animation: cx-btn-aura var(--tp) var(--te) infinite alternate;
 }
-body:is([data-combo-tier="1"],[data-combo-tier="2"],[data-combo-tier="3"],[data-combo-tier="4"]) .study-fx i {
-    left: -10%; right: -10%; bottom: -30%; height: 100%;
-    transform-origin: 50% 100%;
+/* 8 and 10: the panel's rotating conic halo, as a ring hugging the rim, same spin period */
+body:is([data-combo-tier="8"],[data-combo-tier="10"]) .study-button::after {
+    background: var(--tc-aura);
+    -webkit-mask-image: radial-gradient(circle, transparent 58%, #000 100%);
+    mask-image: radial-gradient(circle, transparent 58%, #000 100%);
+    opacity: 0.9;
+    animation: cx-spin var(--ts) linear infinite;
 }
-body:is([data-combo-tier="1"],[data-combo-tier="2"],[data-combo-tier="3"],[data-combo-tier="4"]) .study-fx i:nth-child(1) {
-    opacity: var(--fo);
-    background:
-        radial-gradient(ellipse 14% 65% at 14% 100%, #ffd54a, transparent),
-        radial-gradient(ellipse 16% 80% at 40% 100%, #ffb300, transparent),
-        radial-gradient(ellipse 14% 70% at 66% 100%, #ffd54a, transparent),
-        radial-gradient(ellipse 16% 80% at 88% 100%, #ffb300, transparent);
-    animation: cx-flame 0.7s ease-in-out infinite alternate;
-}
-body:is([data-combo-tier="1"],[data-combo-tier="2"],[data-combo-tier="3"],[data-combo-tier="4"]) .study-fx i:nth-child(2) { display: none; }
 
-/* 5 · Scholar: the panel's flame, same colours, 0.7s breath, brighter glow */
-body[data-combo-tier="5"] .study-button {
-    --bsc: 1.055;
-    background: linear-gradient(0deg, #7a0d0d, #d8340c 55%, #ff8a1f);
-    animation: cx-btn-warm 0.7s ease-in-out infinite alternate, cx-btn-breathe 0.7s ease-in-out infinite alternate;
-}
+/* 5 · Scholar: living flame */
 body[data-combo-tier="5"] .study-fx i { left: -10%; right: -10%; bottom: -30%; height: 100%; transform-origin: 50% 100%; }
 body[data-combo-tier="5"] .study-fx i:nth-child(1) {
     background:
@@ -1856,65 +1779,35 @@ body[data-combo-tier="5"] .study-fx i:nth-child(2) {
         radial-gradient(ellipse 12% 60% at 78% 100%, #ff6a00, transparent);
     animation: cx-flame 0.8s ease-in-out infinite alternate-reverse;
 }
-@keyframes cx-btn-warm {
-    from { box-shadow: 0 0 18px 3px rgba(255, 130, 30, 0.5), 0 8px 36px rgba(255, 90, 0, 0.45), inset 0 -8px 20px rgba(0, 0, 0, 0.12); }
-    to { box-shadow: 0 0 44px 13px rgba(255, 170, 40, 0.95), 0 10px 60px rgba(255, 90, 0, 0.8), inset 0 -8px 20px rgba(0, 0, 0, 0.12); }
-}
 
-/* 6 · Scientist: electric blue-violet body, rotating rays, flicker, vibration */
-body[data-combo-tier="6"] .study-button {
-    --bsc: 1.05;
-    background: linear-gradient(135deg, #12063d, #3a1b9a 50%, #0b2a7a);
-    animation: cx-btn-volt 0.5s ease-in-out infinite alternate, cx-btn-breathe 0.5s ease-in-out infinite alternate, cx-tremor 0.09s linear infinite;
-}
+/* 6 · Professor: rotating plasma rays + flicker */
 body[data-combo-tier="6"] .study-fx i:nth-child(1) {
     inset: -60%;
-    background: repeating-conic-gradient(from 0deg, transparent 0 10deg, rgba(127, 208, 255, 0.6) 11deg 12deg, transparent 13deg 26deg);
+    background: repeating-conic-gradient(from 0deg, transparent 0 10deg, rgba(127, 208, 255, 0.55) 11deg 12deg, transparent 13deg 26deg);
     animation: cx-spin 3s linear infinite;
 }
 body[data-combo-tier="6"] .study-fx i:nth-child(2) {
     inset: 0;
     background:
-        radial-gradient(circle at 20% 50%, rgba(255, 123, 240, 0.65), transparent 45%),
-        radial-gradient(circle at 80% 50%, rgba(127, 208, 255, 0.75), transparent 45%);
+        radial-gradient(circle at 18% 50%, rgba(255, 123, 240, 0.6), transparent 42%),
+        radial-gradient(circle at 82% 50%, rgba(127, 208, 255, 0.7), transparent 42%);
     animation: cx-flicker 0.23s steps(2, end) infinite;
 }
 
-/* 7 · Genius: fire on the left half, frost on the right, a white glint sweeping across */
-body[data-combo-tier="7"] .study-button {
-    --bsc: 1.05;
-    background: linear-gradient(90deg, #b8300a, #ff8a1f 42%, #9ff1ff 58%, #2a6bff);
-    animation: cx-btn-cold 1s ease-in-out infinite alternate, cx-btn-breathe 1s ease-in-out infinite alternate;
-}
+/* 7 · Genius: fire on the left, ice on the right, a white glint sweeping across */
 body[data-combo-tier="7"] .study-fx i:nth-child(1) {
     left: 0; width: 55%; top: 0; bottom: -30%;
-    background: radial-gradient(ellipse 60% 80% at 40% 100%, #ffe08a, rgba(255, 106, 0, 0.55) 55%, transparent);
+    background: radial-gradient(ellipse 60% 80% at 35% 100%, #ffe08a, rgba(255, 106, 0, 0.5) 55%, transparent);
     transform-origin: 50% 100%;
     animation: cx-flame 0.5s ease-in-out infinite alternate;
 }
 body[data-combo-tier="7"] .study-fx i:nth-child(2) {
-    left: 0; width: 70%; top: 0; bottom: 0;
-    background: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, 0.7) 50%, transparent 65%);
+    left: 0; width: 55%; top: 0; bottom: 0;
+    background: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, 0.75) 50%, transparent 65%);
     animation: cx-sweep 1.8s linear infinite;
 }
-body[data-combo-tier="7"] .study-fx::after {
-    /* frost pattern on the cold half: crystalline crosshatch fading to the centre */
-    content: '';
-    position: absolute; right: 0; top: 0; bottom: 0; width: 50%;
-    background:
-        repeating-linear-gradient(60deg, rgba(255, 255, 255, 0.28) 0 1px, transparent 1px 11px),
-        repeating-linear-gradient(-60deg, rgba(255, 255, 255, 0.22) 0 1px, transparent 1px 11px);
-    -webkit-mask-image: linear-gradient(90deg, transparent, #000 70%);
-    mask-image: linear-gradient(90deg, transparent, #000 70%);
-    animation: cx-flicker 1.6s ease-in-out infinite alternate;
-}
 
-/* 8 · Prodigy: a black hole in the button, swirling disc, gravity pull */
-body[data-combo-tier="8"] .study-button {
-    --bsc: 1.04;
-    background: radial-gradient(circle at 50% 50%, #000 0 22%, #0e0626 55%, #1d0a45);
-    animation: cx-btn-pull 2.4s ease-in-out infinite, cx-btn-breathe 1.2s ease-in-out infinite alternate;
-}
+/* 8 · Prodigy: black hole with a violet/gold accretion disc */
 body[data-combo-tier="8"] .study-fx i:nth-child(1) {
     left: 50%; top: 50%; width: 170%; height: 170%; margin: -85% 0 0 -85%;
     background: conic-gradient(from 0deg, transparent, #ff9d2e 12%, #fff1c0 18%, transparent 30%, #7a3cff 55%, transparent 70%, #ff6a00 85%, transparent);
@@ -1928,24 +1821,11 @@ body[data-combo-tier="8"] .study-fx i:nth-child(2) {
     animation: cx-pulse 1.4s ease-in-out infinite;
 }
 
-/* 9 · Legend: nuclear core, shockwave rings, violent tremor */
-body[data-combo-tier="9"] .study-button {
-    --bsc: 1.07;
-    background: radial-gradient(circle at 50% 50%, #fffbd0 0 8%, #ffb300 30%, #e03a00 65%, #5a0a0a);
-    animation: cx-btn-hot 0.45s ease-in-out infinite alternate, cx-btn-breathe 0.45s ease-in-out infinite alternate, cx-tremor 0.12s linear infinite;
-}
+/* 9 · Legend: nuclear core + shockwave ring */
 body[data-combo-tier="9"] .study-fx i:nth-child(1) {
     left: 50%; top: 50%; width: 80%; height: 80%; margin: -40% 0 0 -40%;
     background: radial-gradient(circle, #fff, #ffe066 38%, rgba(255, 140, 0, 0) 70%);
     animation: cx-pulse 0.6s ease-in-out infinite;
-}
-body[data-combo-tier="9"] .study-fx i:nth-child(2) {
-    left: -10%; right: -10%; bottom: -30%; height: 100%; transform-origin: 50% 100%;
-    background:
-        radial-gradient(ellipse 14% 70% at 20% 100%, #ffd54a, transparent),
-        radial-gradient(ellipse 16% 80% at 50% 100%, #ff6a00, transparent),
-        radial-gradient(ellipse 14% 70% at 80% 100%, #ffd54a, transparent);
-    animation: cx-flame 0.35s ease-in-out infinite alternate;
 }
 body:is([data-combo-tier="9"],[data-combo-tier="10"]) .study-fx::after {
     content: '';
@@ -1956,14 +1836,11 @@ body:is([data-combo-tier="9"],[data-combo-tier="10"]) .study-fx::after {
     animation: cx-shock 1.2s ease-out infinite;
 }
 
-/* 10 · Absolute Mind: supernova, whole surface pulses with the heartbeat */
-body[data-combo-tier="10"] .study-button {
-    background: linear-gradient(135deg, #1a0640, #000);
-}
+/* 10 · Absolute Mind: black hole + rainbow disc, pulsing core, rainbow rim halo */
 body[data-combo-tier="10"] .study-fx i:nth-child(1) {
     inset: -60%;
     background: conic-gradient(from 0deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3, #1dd1a1, #ff6b6b);
-    opacity: 0.85;
+    opacity: 0.8;
     -webkit-mask-image: radial-gradient(circle, transparent 12%, #000 30%, transparent 62%);
     mask-image: radial-gradient(circle, transparent 12%, #000 30%, transparent 62%);
     animation: cx-spin 2.5s linear infinite;
