@@ -1,3 +1,4 @@
+// Study-button effects start at tier 1 (light glow in CSS, particles from tier 2).
 // Epic combo effects for the high combo tiers (5..10 = 200, 300, 400, 500, 750, 1000 clicks).
 // CSS (style.css, body[data-combo-tier] / .combo[data-tier]) draws the panel itself;
 // this module adds ONE shared canvas for particles (embers, plasma arcs, ice, black-hole
@@ -15,13 +16,18 @@ const PLASMA = ['#7fd0ff', '#b57bff', '#ff7bf0', '#ffffff'];
 const VOID = ['#b57bff', '#ffd27a', '#ffffff', '#7a3cff'];
 const NUKE = ['#fff7a8', '#ffb300', '#ff6a00', '#ff2d2d'];
 const RAINBOW = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#1dd1a1', '#ffffff'];
-const PALETTE = { 5: FIRE, 6: PLASMA, 7: FIRE.concat(ICE), 8: VOID, 9: NUKE, 10: RAINBOW };
+const WARM = ['#ffb347', '#ffe08a', '#ff9f43'];
+const PALETTE = { 1: WARM, 2: WARM, 3: WARM.concat(FIRE), 4: FIRE, 5: FIRE, 6: PLASMA, 7: FIRE.concat(ICE), 8: VOID, 9: NUKE, 10: RAINBOW };
 
 // Spawn rates (particles/second) per tier. Higher tiers combine the lower ideas.
 // btn*: effects that live on the Study button itself and grow with the tier
 // (toBtn = sparks flying from the panel, btnSpark = sparks off the rim,
 // btnBolt = tiny lightning arcs, btnSpiral = particles swirling into the button).
 const EMIT = {
+    // Tiers 1-4 (10..100 clicks): the button warms up. Tier 1 is CSS only.
+    2: { btnSpark: 0.8 },
+    3: { btnSpark: 2, btnEmber: 3, toBtn: 1.2 },
+    4: { btnSpark: 4, btnEmber: 7, toBtn: 2.6 },
     5: { ember: 38, toBtn: 4 },
     6: { spark: 26, bolt: 7, toBtn: 6, btnSpark: 6, btnBolt: 0.8 },
     7: { ember: 20, ice: 22, toBtn: 8, btnSpark: 14, btnBolt: 1.6 },
@@ -76,6 +82,7 @@ export class ComboFx {
         this.tier = tier;
         document.body.dataset.comboTier = tier;
         if (tier > prev && tier >= FIRST_FX_TIER) this.onTierUp(tier);
+        else if (tier > prev && tier >= 2) this.onLowTierUp(tier);
         if (tier < FIRST_FX_TIER) this.ringTimer = 0;
         this.rectCountdown = 0;
     }
@@ -85,7 +92,7 @@ export class ComboFx {
         const dt = Math.min((now - this.lastT) / 1000, 0.05);
         this.lastT = now;
         if (this.reduce) return;
-        const live = this.tier >= FIRST_FX_TIER;
+        const live = !!EMIT[this.tier];
         if (!live && !this.parts.length && !this.rings.length && !this.bolts.length) {
             if (this.dirty) this.clear();
             return;
@@ -166,6 +173,17 @@ export class ComboFx {
             this.burstAt(bx, by, tier === 10 ? 36 : 22, PALETTE[tier]);
             this.addRing(bx, by, PALETTE[tier][1], this.br.width * 1.2, 0.1, 4);
         }
+    }
+
+    /** Tiers 2-4: a small warm pop on the Study button */
+    onLowTierUp(tier) {
+        if (this.reduce) return;
+        this.refreshRects();
+        if (!this.br) return;
+        const bx = this.br.left + this.br.width / 2;
+        const by = this.br.top + this.br.height / 2;
+        this.burstAt(bx, by, 3 * (tier - 1), PALETTE[tier]);
+        this.addRing(bx, by, PALETTE[tier][0], this.br.width * (0.65 + (tier - 2) * 0.08), 0, 1.5 + (tier - 2) * 0.5);
     }
 
     flash(color, ms) {
@@ -303,7 +321,7 @@ export class ComboFx {
         }
     }
 
-    /** Effects hugging the Study button (tiers 6+) */
+    /** Effects hugging the Study button (tiers 2+) */
     emitButton(e, n, pal) {
         const br = this.br;
         const bx = br.left + br.width / 2;
@@ -317,6 +335,15 @@ export class ComboFx {
             this.add({
                 k: 'spark', x: bx + Math.cos(a) * rad * 0.95, y: by + Math.sin(a) * rad * 0.95,
                 vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 20, life, max: life, size: rnd(1.4, 2.6), color: pick(pal)
+            });
+        }
+        for (let i = n('btnEmber', e.btnEmber || 0); i > 0; i--) {
+            // Coals drift up off the top half of the button
+            const a = rnd(Math.PI * 1.1, Math.PI * 1.9);
+            const life = rnd(0.7, 1.2);
+            this.add({
+                k: 'ember', x: bx + Math.cos(a) * rad * 0.85, y: by + Math.sin(a) * rad * 0.85,
+                vx: rnd(-10, 10), vy: -rnd(30, 70), life, max: life, size: rnd(1.6, 3), color: pick(pal), ph: rnd(0, TAU)
             });
         }
         for (let i = n('btnSpiral', e.btnSpiral || 0); i > 0; i--) {
