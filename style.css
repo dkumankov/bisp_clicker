@@ -233,6 +233,11 @@ button:focus-visible,
     flex: 1;
 }
 
+.float-container {
+    /* empty stray node inside .game: must not occupy a grid cell */
+    display: none;
+}
+
 .play {
     display: flex;
     flex-direction: column;
