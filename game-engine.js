@@ -1,4 +1,4 @@
-import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, ACHIEVEMENTS, PRESTIGE_CONFIG, COMBO_CONFIG, GOLDEN_CONFIG, DAILY_BONUS_CONFIG, CAMPUS_STAGES, ECONOMY_CONFIG } from './data.js?v=12';
+import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, ACHIEVEMENTS, PRESTIGE_CONFIG, COMBO_CONFIG, GOLDEN_CONFIG, DAILY_BONUS_CONFIG, CAMPUS_STAGES, ECONOMY_CONFIG } from './data.js?v=14';
 
 export class GameEngine {
     constructor() {
@@ -73,6 +73,11 @@ export class GameEngine {
             if (this.combo >= tier.min) mult = tier.mult;
         }
         return mult;
+    }
+
+    /** Tier number (0 = none, 1..N = COMBO_CONFIG.tiers position) reached by a streak length */
+    getComboTier(count = this.combo) {
+        return COMBO_CONFIG.tiers.filter(t => count >= t.min).length;
     }
 
     /** Fraction (0..1) of the combo window that is still left, for the combo meter */

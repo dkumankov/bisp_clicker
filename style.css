@@ -1482,3 +1482,293 @@ button:focus-visible,
     letter-spacing: 0.15em;
     font-weight: 700;
 }
+
+/* ===== Epic combo tiers (5..10 = 200, 300, 400, 500, 750, 1000 clicks) =====
+   Everything animates transform / opacity (GPU-composited); the one exception is the
+   Study button glow at tiers 9, which is a single element. Particles live in combo-fx.js. */
+.combo { position: relative; }
+.combo > span:not(.combo-fx) { position: relative; z-index: 1; }
+.combo-fx { display: none; }
+.combo-fx i { position: absolute; display: none; pointer-events: none; }
+
+.combo:is([data-tier="5"],[data-tier="6"],[data-tier="7"],[data-tier="8"],[data-tier="9"],[data-tier="10"]) {
+    isolation: isolate;
+    background: none;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.85);
+}
+.combo:is([data-tier="5"],[data-tier="6"],[data-tier="7"],[data-tier="8"],[data-tier="9"],[data-tier="10"])::before {
+    content: '';
+    position: absolute;
+    inset: -10px;
+    z-index: -1;
+    border-radius: 26px;
+    filter: blur(10px);
+    pointer-events: none;
+    will-change: transform, opacity;
+}
+.combo:is([data-tier="5"],[data-tier="6"],[data-tier="7"],[data-tier="8"],[data-tier="9"],[data-tier="10"]) .combo-fx {
+    display: block;
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: 14px;
+    overflow: hidden;
+    pointer-events: none;
+}
+.combo:is([data-tier="5"],[data-tier="6"],[data-tier="7"],[data-tier="8"],[data-tier="9"],[data-tier="10"]) .combo-fx i { display: block; will-change: transform, opacity; }
+
+/* -- 5 · Scholar (200): living flame -- */
+.combo[data-tier="5"] .combo-fx { background: linear-gradient(0deg, #7a0d0d, #d8340c 55%, #ff8a1f); }
+.combo[data-tier="5"]::before {
+    background: radial-gradient(ellipse at 50% 100%, rgba(255, 150, 0, 0.95), rgba(255, 60, 0, 0) 72%);
+    animation: cx-aura 0.7s ease-in-out infinite alternate;
+}
+.combo[data-tier="5"] .combo-fx i {
+    left: -10%; right: -10%; bottom: -30%; height: 100%;
+    transform-origin: 50% 100%;
+}
+.combo[data-tier="5"] .combo-fx i:nth-child(1) {
+    background:
+        radial-gradient(ellipse 14% 65% at 12% 100%, #ffd54a, transparent),
+        radial-gradient(ellipse 16% 80% at 38% 100%, #ffb300, transparent),
+        radial-gradient(ellipse 14% 70% at 64% 100%, #ffd54a, transparent),
+        radial-gradient(ellipse 16% 80% at 88% 100%, #ffb300, transparent);
+    animation: cx-flame 0.55s ease-in-out infinite alternate;
+}
+.combo[data-tier="5"] .combo-fx i:nth-child(2) {
+    background:
+        radial-gradient(ellipse 12% 60% at 25% 100%, #ff6a00, transparent),
+        radial-gradient(ellipse 14% 75% at 52% 100%, #ff3d00, transparent),
+        radial-gradient(ellipse 12% 60% at 78% 100%, #ff6a00, transparent);
+    animation: cx-flame 0.8s ease-in-out infinite alternate-reverse;
+}
+
+/* -- 6 · Professor (300): plasma, arcs, vibration -- */
+.combo[data-tier="6"] { animation: cx-tremor 0.09s linear infinite; }
+.combo[data-tier="6"] .combo-fx { background: linear-gradient(135deg, #12063d, #3a1b9a 50%, #0b2a7a); }
+.combo[data-tier="6"]::before {
+    background: radial-gradient(ellipse at center, rgba(127, 208, 255, 0.95), rgba(181, 123, 255, 0.6) 55%, transparent 75%);
+    animation: cx-flicker 0.17s steps(2, end) infinite;
+}
+.combo[data-tier="6"] .combo-fx i:nth-child(1) {
+    inset: -80%;
+    background: repeating-conic-gradient(from 0deg, transparent 0 10deg, rgba(127, 208, 255, 0.55) 11deg 12deg, transparent 13deg 26deg);
+    animation: cx-spin 3s linear infinite;
+}
+.combo[data-tier="6"] .combo-fx i:nth-child(2) {
+    inset: 0;
+    background:
+        radial-gradient(circle at 18% 50%, rgba(255, 123, 240, 0.6), transparent 42%),
+        radial-gradient(circle at 82% 50%, rgba(127, 208, 255, 0.7), transparent 42%);
+    animation: cx-flicker 0.23s steps(2, end) infinite;
+}
+
+/* -- 7 · Genius (400): fire + ice -- */
+.combo[data-tier="7"] .combo-fx { background: linear-gradient(90deg, #b8300a, #ff8a1f 42%, #9ff1ff 58%, #2a6bff); }
+.combo[data-tier="7"]::before {
+    background: linear-gradient(90deg, rgba(255, 106, 0, 0.95), rgba(255, 255, 255, 0.4) 50%, rgba(90, 169, 255, 0.95));
+    animation: cx-aura 1s ease-in-out infinite alternate;
+}
+.combo[data-tier="7"] .combo-fx i:nth-child(1) {
+    left: 0; width: 55%; bottom: -30%; top: 0;
+    background: radial-gradient(ellipse 60% 80% at 35% 100%, #ffe08a, rgba(255, 106, 0, 0.5) 55%, transparent);
+    transform-origin: 50% 100%;
+    animation: cx-flame 0.5s ease-in-out infinite alternate;
+}
+.combo[data-tier="7"] .combo-fx i:nth-child(2) {
+    left: 0; width: 55%; top: 0; bottom: 0; right: auto;
+    background: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, 0.75) 50%, transparent 65%);
+    animation: cx-sweep 1.8s linear infinite;
+}
+
+/* -- 8 · Prodigy (500): black hole -- */
+.combo[data-tier="8"] { animation: cx-warp 2.4s ease-in-out infinite; }
+.combo[data-tier="8"] .combo-fx { background: radial-gradient(ellipse at 50% 50%, #000 0 22%, #0e0626 55%, #1d0a45); }
+.combo[data-tier="8"]::before {
+    inset: -14px;
+    background: conic-gradient(#7a3cff, #ff9d2e, #7a3cff, #2a0a6a, #ff9d2e, #7a3cff);
+    animation: cx-spin 4s linear infinite;
+}
+.combo[data-tier="8"] .combo-fx i:nth-child(1) {
+    left: 50%; top: 50%; width: 280px; height: 280px; margin: -140px 0 0 -140px;
+    background: conic-gradient(from 0deg, transparent, #ff9d2e 12%, #fff1c0 18%, transparent 30%, #7a3cff 55%, transparent 70%, #ff6a00 85%, transparent);
+    -webkit-mask-image: radial-gradient(circle, transparent 14%, #000 26%, transparent 50%);
+    mask-image: radial-gradient(circle, transparent 14%, #000 26%, transparent 50%);
+    animation: cx-spin 2.2s linear infinite;
+}
+.combo[data-tier="8"] .combo-fx i:nth-child(2) {
+    left: 50%; top: 50%; width: 84px; height: 84px; margin: -42px 0 0 -42px;
+    background: radial-gradient(circle, #000 52%, rgba(255, 210, 122, 0.95) 60%, rgba(255, 140, 0, 0) 72%);
+    animation: cx-pulse 1.4s ease-in-out infinite;
+}
+
+/* -- 9 · Legend (750): nuclear blast -- */
+.combo[data-tier="9"] { animation: cx-tremor 0.12s linear infinite; }
+.combo[data-tier="9"] .combo-fx { background: radial-gradient(circle at 50% 50%, #fffbd0 0 8%, #ffb300 30%, #e03a00 65%, #5a0a0a); }
+.combo[data-tier="9"]::before {
+    inset: -16px;
+    background: radial-gradient(ellipse at center, rgba(255, 190, 40, 1), rgba(255, 60, 0, 0.7) 55%, transparent 75%);
+    animation: cx-aura 0.45s ease-in-out infinite alternate;
+}
+.combo[data-tier="9"] .combo-fx i:nth-child(1) {
+    left: 50%; top: 50%; width: 140px; height: 140px; margin: -70px 0 0 -70px;
+    background: radial-gradient(circle, #fff, #ffe066 38%, rgba(255, 140, 0, 0) 70%);
+    animation: cx-pulse 0.6s ease-in-out infinite;
+}
+.combo[data-tier="9"] .combo-fx::after,
+.combo[data-tier="10"] .combo-fx::after {
+    content: '';
+    position: absolute;
+    left: 50%; top: 50%; width: 40px; height: 40px; margin: -20px 0 0 -20px;
+    border: 3px solid rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    animation: cx-shock 1.2s ease-out infinite;
+}
+
+/* -- 10 · Absolute Mind (1000): supernova = black hole + blast + halo -- */
+.combo[data-tier="10"] { animation: cx-heart 0.8s ease-in-out infinite; }
+.combo[data-tier="10"] .combo-fx { background: linear-gradient(135deg, #1a0640, #000); }
+.combo[data-tier="10"]::before {
+    inset: -18px;
+    background: conic-gradient(#ff6b6b, #feca57, #48dbfb, #ff9ff3, #1dd1a1, #ff6b6b);
+    animation: cx-spin 2s linear infinite;
+}
+.combo[data-tier="10"] .combo-fx i:nth-child(1) {
+    inset: -90%;
+    background: conic-gradient(from 0deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3, #1dd1a1, #ff6b6b);
+    opacity: 0.8;
+    -webkit-mask-image: radial-gradient(circle, transparent 12%, #000 30%, transparent 62%);
+    mask-image: radial-gradient(circle, transparent 12%, #000 30%, transparent 62%);
+    animation: cx-spin 2.5s linear infinite;
+}
+.combo[data-tier="10"] .combo-fx i:nth-child(2) {
+    left: 50%; top: 50%; width: 90px; height: 90px; margin: -45px 0 0 -45px;
+    background: radial-gradient(circle, #000 50%, #fff 58%, rgba(255, 255, 255, 0) 72%);
+    animation: cx-pulse 0.8s ease-in-out infinite;
+}
+
+@keyframes cx-flame { from { transform: scale(0.96, 0.72); opacity: 0.8; } to { transform: scale(1.04, 1.2); opacity: 1; } }
+@keyframes cx-aura { from { transform: scale(1); opacity: 0.6; } to { transform: scale(1.1); opacity: 1; } }
+@keyframes cx-flicker { 0% { opacity: 0.45; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
+@keyframes cx-spin { to { transform: rotate(360deg); } }
+@keyframes cx-sweep { from { transform: translateX(-110%); } to { transform: translateX(210%); } }
+@keyframes cx-pulse { 0%, 100% { transform: scale(0.85); } 50% { transform: scale(1.15); } }
+@keyframes cx-shock { from { transform: scale(0.5); opacity: 1; } to { transform: scale(9); opacity: 0; } }
+@keyframes cx-tremor {
+    0% { transform: translate(0, 0); } 25% { transform: translate(1px, -1px); }
+    50% { transform: translate(-1px, 1px); } 75% { transform: translate(1px, 1px); } 100% { transform: translate(0, 0); }
+}
+@keyframes cx-warp { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(1.03, 0.96); } }
+@keyframes cx-heart {
+    0%, 100% { transform: scale(1); } 15% { transform: scale(1.07); } 30% { transform: scale(1); }
+    45% { transform: scale(1.1); } 70% { transform: scale(1); }
+}
+
+/* -- The Study button joins in at 750 and 1000 -- */
+.study-button::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    opacity: 0;
+    pointer-events: none;
+}
+body[data-combo-tier="9"] .study-button {
+    border-color: #fff2b0;
+    box-shadow: 0 0 34px 8px rgba(255, 170, 40, 0.85), 0 0 80px 22px rgba(255, 60, 0, 0.5), inset 0 -8px 20px rgba(0, 0, 0, 0.12);
+    animation: cx-btn-hot 0.45s ease-in-out infinite alternate;
+}
+body[data-combo-tier="9"] .study-button::after {
+    background: radial-gradient(circle, rgba(255, 240, 160, 0.75), rgba(255, 120, 0, 0.3) 60%, transparent 75%);
+    animation: cx-flicker 0.3s steps(2, end) infinite;
+}
+body[data-combo-tier="10"] .study-button {
+    border-color: #fff;
+    box-shadow: 0 0 40px 10px rgba(255, 130, 200, 0.85), 0 0 90px 26px rgba(72, 219, 251, 0.55), inset 0 -8px 20px rgba(0, 0, 0, 0.12);
+    animation: cx-heart 0.8s ease-in-out infinite;
+}
+body[data-combo-tier="10"] .study-button::after {
+    background: conic-gradient(#ff6b6b, #feca57, #48dbfb, #ff9ff3, #1dd1a1, #ff6b6b);
+    -webkit-mask-image: radial-gradient(circle, transparent 45%, #000 100%);
+    mask-image: radial-gradient(circle, transparent 45%, #000 100%);
+    opacity: 0.55;
+    animation: cx-spin 2.5s linear infinite;
+}
+@keyframes cx-btn-hot {
+    from { box-shadow: 0 0 30px 6px rgba(255, 170, 40, 0.75), 0 0 70px 16px rgba(255, 60, 0, 0.4), inset 0 -8px 20px rgba(0, 0, 0, 0.12); }
+    to { box-shadow: 0 0 44px 12px rgba(255, 200, 60, 0.95), 0 0 100px 30px rgba(255, 60, 0, 0.6), inset 0 -8px 20px rgba(0, 0, 0, 0.12); }
+}
+
+/* -- Screen-edge glow (750: heat, 1000: supernova halo) -- */
+body::before, body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 140;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.6s;
+}
+body::before { background: radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(255, 150, 40, 0.4) 82%, rgba(255, 60, 0, 0.6) 100%); }
+body::after { background: radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(72, 219, 251, 0.35) 82%, rgba(181, 123, 255, 0.6) 100%); }
+body[data-combo-tier="9"]::before { opacity: 0.55; animation: cx-edge 0.9s ease-in-out infinite alternate; }
+body[data-combo-tier="10"]::before { opacity: 1; animation: cx-edge 0.8s ease-in-out infinite alternate; }
+body[data-combo-tier="10"]::after { opacity: 1; animation: cx-edge 1.6s ease-in-out infinite alternate-reverse; }
+@keyframes cx-edge { from { transform: scale(1); } to { transform: scale(1.04); } }
+
+/* -- Overlay pieces created by combo-fx.js -- */
+.combo-fx-canvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 145;
+    pointer-events: none;
+}
+.combo-flash {
+    position: fixed;
+    inset: 0;
+    z-index: 146;
+    pointer-events: none;
+    opacity: 0;
+}
+.combo-banner {
+    position: fixed;
+    left: 50%;
+    top: calc(env(safe-area-inset-top) + 16vh);
+    z-index: 147;
+    width: max-content;
+    max-width: 94vw;
+    text-align: center;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-50%, 0);
+    font-weight: 900;
+}
+.combo-banner-title {
+    font-size: clamp(1.5rem, 7vw, 3.2rem);
+    letter-spacing: 2px;
+    color: #fff;
+    text-shadow: 0 0 12px var(--cb, #ff9d2e), 0 0 30px var(--cb, #ff9d2e), 0 3px 0 rgba(0, 0, 0, 0.5);
+}
+.combo-banner-sub {
+    margin-top: 0.2rem;
+    font-size: clamp(0.8rem, 3.6vw, 1.2rem);
+    color: #fff;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+}
+.combo-banner[data-tier="5"] { --cb: #ff6a00; }
+.combo-banner[data-tier="6"] { --cb: #7fd0ff; }
+.combo-banner[data-tier="7"] { --cb: #9ff1ff; }
+.combo-banner[data-tier="8"] { --cb: #b57bff; }
+.combo-banner[data-tier="9"] { --cb: #ffb300; }
+.combo-banner[data-tier="10"] { --cb: #ff9ff3; }
+.combo-banner[data-tier="10"] .combo-banner-title { font-size: clamp(1.7rem, 8.5vw, 4rem); }
+
+@media (prefers-reduced-motion: reduce) {
+    .combo, .combo::before, .combo-fx i, .combo-fx::after,
+    .study-button, .study-button::after, body::before, body::after {
+        animation: none !important;
+    }
+    body::before, body::after { display: none; }
+}

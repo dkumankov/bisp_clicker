@@ -1,13 +1,15 @@
-import { GameEngine } from './game-engine.js?v=13';
-import { SaveManager, MIN_OFFLINE_SECONDS } from './save-manager.js?v=13';
-import { SoundManager } from './sound-manager.js?v=13';
-import { fetchLeaderboard, postScore, validateName, cleanName, timeAgo, SUBMIT_INTERVAL_MS } from './leaderboard.js?v=13';
-import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, COMBO_CONFIG, GOLDEN_CONFIG, CAMPUS_STAGES, MILESTONES } from './data.js?v=13';
+import { GameEngine } from './game-engine.js?v=14';
+import { SaveManager, MIN_OFFLINE_SECONDS } from './save-manager.js?v=14';
+import { SoundManager } from './sound-manager.js?v=14';
+import { ComboFx } from './combo-fx.js?v=14';
+import { fetchLeaderboard, postScore, validateName, cleanName, timeAgo, SUBMIT_INTERVAL_MS } from './leaderboard.js?v=14';
+import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, COMBO_CONFIG, GOLDEN_CONFIG, CAMPUS_STAGES, MILESTONES } from './data.js?v=14';
 
 // Initialize game engine, save manager, and sound manager
 const game = new GameEngine();
 const saveManager = new SaveManager();
 const soundManager = new SoundManager();
+let comboFx = null;  // created in init once the DOM refs exist
 
 const $ = (id) => document.getElementById(id);
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -705,9 +707,12 @@ function renderUpgrades() {
 // ===== Combo meter =====
 function updateCombo() {
     const combo = $('combo');
+    if (!comboFx) comboFx = new ComboFx({ combo, button: studyButton, sound: soundManager, reduceMotion });
     if (game.combo < 2) {
         combo.classList.add('hidden');
         lastComboTier = 0;
+        comboFx.setTier(0);
+        comboFx.update(performance.now());
         return;
     }
     combo.classList.remove('hidden');
@@ -715,19 +720,23 @@ function updateCombo() {
     $('combo-meter-fill').style.width = (game.getComboTimeLeft() * 100) + '%';
 
     const mult = game.getComboMultiplier();
-    $('combo-mult').textContent = mult > 1 ? `🔥 ${mult}x IQ` : 'keep tapping!';
+    const tier = game.getComboTier();
+    const tierName = tier > 0 ? COMBO_CONFIG.tiers[tier - 1].name : '';
+    $('combo-mult').textContent = mult > 1 ? `🔥 ${mult}x IQ · ${tierName}` : 'keep tapping!';
 
     // Colour tier and a pop when a new tier is reached
-    const tier = COMBO_CONFIG.tiers.filter(t => game.combo >= t.min).length;
     combo.dataset.tier = tier;
     if (tier > lastComboTier && !reduceMotion) {
         combo.animate(
             [{ transform: 'scale(1)' }, { transform: 'scale(1.25)' }, { transform: 'scale(1)' }],
             { duration: 300, easing: 'ease-out' }
         );
-        soundManager.playMilestone();
     }
+    // Tiers 5+ get their own fanfare from the effects module
+    if (tier > lastComboTier && tier < 5) soundManager.playMilestone();
     lastComboTier = tier;
+    comboFx.setTier(tier);
+    comboFx.update(performance.now());
 }
 
 // ===== Golden School Badge =====
@@ -1014,7 +1023,8 @@ function confirmDialog({ emoji, title, text, okLabel = 'OK', cancelLabel = 'Canc
 
 // ===== Settings and reset =====
 function openSettings() {
-    $('stat-best-combo').textContent = game.best_combo;
+    const bestTier = game.getComboTier(game.best_combo);
+    $('stat-best-combo').textContent = game.best_combo + (bestTier > 0 ? ' (' + COMBO_CONFIG.tiers[bestTier - 1].name + ')' : '');
     $('stat-golden').textContent = game.golden_clicks;
     $('name-settings-input').value = game.leaderboard_name;
     $('name-settings-error').textContent = '';

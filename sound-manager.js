@@ -176,6 +176,31 @@ export class SoundManager {
             this.playTone(f, 0.14, { type: 'sine', volume: 0.14, delay: i * 0.06 }));
     }
 
+    /** Combo tier-up (tier 5..10): grows from a chime to a nuclear boom and a full fanfare */
+    playComboTier(tier) {
+        if (!this.ready) return;
+        const rise = [N.C5, N.E5, N.G5, N.C6, N.E6, N.G6];
+        if (tier <= 8) {
+            rise.slice(0, 3 + (tier - 5)).forEach((f, i) =>
+                this.playTone(f, 0.18, { type: 'sawtooth', volume: 0.07, delay: i * 0.06 }));
+            this.playTone(N.C7, 0.4, { type: 'sine', volume: 0.12, delay: 0.3 });
+            return;
+        }
+        // Boom: low sine drop plus a noise crack
+        this.playTone(110, 0.8, { type: 'sine', volume: 0.35, slideTo: 28 });
+        this.playNoise(0.5, { volume: 0.12, freq: 600 });
+        if (tier === 9) {
+            rise.forEach((f, i) => this.playTone(f, 0.2, { type: 'square', volume: 0.07, delay: 0.25 + i * 0.06 }));
+            return;
+        }
+        // Tier 10: triumphant fanfare
+        [N.C5, N.E5, N.G5, N.C6, N.E6, N.G6, N.C7].forEach((f, i) =>
+            this.playTone(f, 0.25, { type: 'sawtooth', volume: 0.09, delay: 0.3 + i * 0.09 }));
+        [N.C5, N.G5, N.C6, N.E6].forEach(f =>
+            this.playTone(f, 1.4, { type: 'triangle', volume: 0.13, delay: 1.0 }));
+        this.playNoise(0.8, { volume: 0.08, delay: 1.0, freq: 5000 });
+    }
+
     /** Golden badge appears (soft shimmer) */
     playGoldenSpawn() {
         this.playTone(N.G6, 0.25, { type: 'sine', volume: 0.1 });

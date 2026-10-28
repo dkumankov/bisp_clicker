@@ -1255,6 +1255,24 @@ export const ACHIEVEMENTS = [
         reward_value: 1.02
     },
     {
+        id: "combo_500",
+        name: "Black Hole Mind",
+        description: "Reach a 500-click combo",
+        condition: "best_combo",
+        threshold: 500,
+        reward_type: "click_power",
+        reward_value: 1.02
+    },
+    {
+        id: "combo_1000",
+        name: "Supernova",
+        description: "Reach a 1000-click combo",
+        condition: "best_combo",
+        threshold: 1000,
+        reward_type: "click_power",
+        reward_value: 1.03
+    },
+    {
         id: "golden_1",
         name: "Lucky Find",
         description: "Catch a Golden School Badge",
@@ -1295,11 +1313,17 @@ export const PRESTIGE_CONFIG = {
 // Click combo: tapping quickly builds a streak that multiplies click power
 export const COMBO_CONFIG = {
     window_ms: 1200,  // Max gap between clicks to keep the streak alive
-    tiers: [          // Highest matching tier wins
-        { min: 10, mult: 1.25 },
-        { min: 25, mult: 1.5 },
-        { min: 50, mult: 2 },
-        { min: 100, mult: 3 }
+    tiers: [          // Highest matching tier wins; array position + 1 = tier number (data-combo-tier)
+        { min: 10, mult: 1.25, name: "Warm-up" },
+        { min: 25, mult: 1.5, name: "Student" },
+        { min: 50, mult: 2, name: "Honor Roll" },
+        { min: 100, mult: 3, name: "Straight-A" },
+        { min: 200, mult: 3.5, name: "Scholar" },        // flame
+        { min: 300, mult: 4, name: "Professor" },        // plasma
+        { min: 400, mult: 4.5, name: "Genius" },         // fire + ice
+        { min: 500, mult: 5, name: "Prodigy" },          // black hole
+        { min: 750, mult: 6, name: "Legend" },           // nuclear blast
+        { min: 1000, mult: 8, name: "Absolute Mind" }    // supernova
     ]
 };
 
