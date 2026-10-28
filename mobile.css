@@ -148,6 +148,9 @@
         font-size: clamp(1.9rem, 9vw, 2.4rem);
     }
 
+    .study-gain b[data-len="l"] { font-size: clamp(1.6rem, 7.5vw, 2rem); }
+    .study-gain b[data-len="xl"] { font-size: clamp(1.3rem, 6vw, 1.6rem); }
+
     .combo {
         min-width: 0;
         width: min(100%, 240px);
@@ -459,6 +462,9 @@
     .study-gain b {
         font-size: 1.8rem;
     }
+
+    .study-gain b[data-len="l"] { font-size: 1.5rem; }
+    .study-gain b[data-len="xl"] { font-size: 1.25rem; }
 
     .study-rate {
         min-height: 36px;

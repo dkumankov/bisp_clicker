@@ -52,6 +52,8 @@ const BANNER = {
     10: { icon: '🌟', text: 'ABSOLUTE MIND', sub: '1000 COMBO · SUPERNOVA OF THE MIND!', ms: 4000 }
 };
 
+const FADE_S = 0.3;  // orphaned particles fade out over this long when the streak resets / tier drops
+
 export class ComboFx {
     constructor({ combo, button, sound, reduceMotion }) {
         this.combo = combo;
@@ -91,7 +93,16 @@ export class ComboFx {
         if (tier > prev && tier >= FIRST_FX_TIER) this.onTierUp(tier);
         else if (tier > prev && tier >= 2) this.onLowTierUp(tier);
         if (tier < FIRST_FX_TIER) this.ringTimer = 0;
+        if (tier < prev) this.fadeOut();
         this.rectCountdown = 0;
+    }
+
+    /** Everything alive right now fades out over FADE_S (streak reset or tier drop); later emissions are unaffected */
+    fadeOut() {
+        this.acc = {};
+        for (const list of [this.parts, this.rings, this.bolts]) {
+            for (const o of list) if (o.fo === undefined) o.fo = FADE_S;
+        }
     }
 
     /** Called every frame after setTier */
@@ -106,9 +117,8 @@ export class ComboFx {
         }
         if (!this.canvas) this.createCanvas();
         if (--this.rectCountdown <= 0) this.refreshRects();
-        if (!this.pr) return;
 
-        if (live) this.emit(dt);
+        if (live && this.pr) this.emit(dt);
         this.step(dt);
         this.draw();
     }
@@ -430,6 +440,7 @@ export class ComboFx {
             const p = ps[i];
             p.life -= dt;
             let dead = p.life <= 0;
+            if (p.fo !== undefined && (p.fo -= dt) <= 0) dead = true;
             if (p.k === 'spark') {
                 p.x += p.vx * dt; p.y += p.vy * dt;
                 p.vx *= 0.94; p.vy = p.vy * 0.94 + 40 * dt;
@@ -456,7 +467,7 @@ export class ComboFx {
                 const my = (p.sy + p.ey) / 2;
                 p.x = (1 - t) * (1 - t) * p.sx + 2 * (1 - t) * t * mx + t * t * p.ex;
                 p.y = (1 - t) * (1 - t) * p.sy + 2 * (1 - t) * t * my + t * t * p.ey;
-                if (p.t >= 1) {
+                if (p.t >= 1 && p.fo === undefined) {
                     dead = true;
                     // Lands: a few sparks bounce off and the rest flare on the surface
                     this.spawnSpark(p.ex, p.ey, PALETTE[this.tier] || FIRE, rnd(40, 110), rnd(0.2, 0.4));
@@ -478,14 +489,17 @@ export class ComboFx {
         }
         for (let i = this.rings.length - 1; i >= 0; i--) {
             const r = this.rings[i];
+            if (r.fo !== undefined && (r.fo -= dt) <= 0) { this.rings.splice(i, 1); continue; }
             if (r.delay > 0) { r.delay -= dt; continue; }
             r.t += dt / 0.8;
             r.r = 8 + (r.max - 8) * (1 - Math.pow(1 - Math.min(r.t, 1), 3));
             if (r.t >= 1) this.rings.splice(i, 1);
         }
         for (let i = this.bolts.length - 1; i >= 0; i--) {
-            this.bolts[i].life -= dt;
-            if (this.bolts[i].life <= 0) this.bolts.splice(i, 1);
+            const b = this.bolts[i];
+            b.life -= dt;
+            if (b.fo !== undefined) b.fo -= dt;
+            if (b.life <= 0 || b.fo <= 0) this.bolts.splice(i, 1);
         }
     }
 
@@ -499,22 +513,23 @@ export class ComboFx {
 
         for (const p of this.parts) {
             const f = Math.max(p.life / p.max, 0);
+            const m = p.fo === undefined ? 1 : Math.max(p.fo / FADE_S, 0);
             ctx.fillStyle = p.color;
             ctx.strokeStyle = p.color;
             if (p.k === 'spark') {
-                ctx.globalAlpha = f;
+                ctx.globalAlpha = (f) * m;
                 ctx.lineWidth = p.size;
                 ctx.beginPath();
                 ctx.moveTo(p.x, p.y);
                 ctx.lineTo(p.x - p.vx * 0.03, p.y - p.vy * 0.03);
                 ctx.stroke();
             } else if (p.k === 'ember') {
-                ctx.globalAlpha = f * 0.9;
+                ctx.globalAlpha = (f * 0.9) * m;
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, p.size * (0.4 + f * 0.6), 0, TAU);
                 ctx.fill();
             } else if (p.k === 'ice') {
-                ctx.globalAlpha = Math.min(f * 1.5, 0.9);
+                ctx.globalAlpha = (Math.min(f * 1.5, 0.9)) * m;
                 const s = p.size;
                 ctx.beginPath();
                 ctx.moveTo(p.x, p.y - s * 1.6);
@@ -524,7 +539,7 @@ export class ComboFx {
                 ctx.fill();
             } else if (p.k === 'spiral') {
                 const fade = p.twinkle ? Math.sin(Math.PI * (1 - f)) * (0.6 + Math.random() * 0.4) : Math.min(1, p.r / 40);
-                ctx.globalAlpha = fade;
+                ctx.globalAlpha = (fade) * m;
                 if (p.trail) {
                     ctx.lineWidth = p.size;
                     ctx.beginPath();
@@ -540,9 +555,9 @@ export class ComboFx {
                 // Flash in fast, fade out: a soft halo plus a hot core (additive blend)
                 const a = Math.sin(Math.PI * (1 - f)) * (0.75 + 0.25 * Math.sin(p.ph));
                 const s = p.size * (0.6 + 0.6 * a);
-                ctx.globalAlpha = a * 0.3;
+                ctx.globalAlpha = (a * 0.3) * m;
                 ctx.beginPath(); ctx.arc(p.x, p.y, s * 2.6, 0, TAU); ctx.fill();
-                ctx.globalAlpha = Math.min(a * 1.1, 1);
+                ctx.globalAlpha = (Math.min(a * 1.1, 1)) * m;
                 ctx.beginPath();
                 if (p.sq) {                     // frost glint
                     ctx.moveTo(p.x, p.y - s * 1.7); ctx.lineTo(p.x + s * 0.6, p.y);
@@ -550,7 +565,7 @@ export class ComboFx {
                 } else ctx.arc(p.x, p.y, s, 0, TAU);
                 ctx.fill();
             } else if (p.k === 'toBtn') {
-                ctx.globalAlpha = 0.95;
+                ctx.globalAlpha = (0.95) * m;
                 ctx.lineWidth = p.size;
                 ctx.beginPath();
                 ctx.moveTo(p.px, p.py);
@@ -560,7 +575,7 @@ export class ComboFx {
         }
         for (const r of this.rings) {
             if (r.delay > 0) continue;
-            ctx.globalAlpha = Math.max(1 - r.t, 0) * 0.85;
+            ctx.globalAlpha = Math.max(1 - r.t, 0) * 0.85 * (r.fo === undefined ? 1 : Math.max(r.fo / FADE_S, 0));
             ctx.strokeStyle = r.color;
             ctx.lineWidth = r.lw * (1 - r.t * 0.6);
             ctx.beginPath();
@@ -568,7 +583,7 @@ export class ComboFx {
             ctx.stroke();
         }
         for (const b of this.bolts) {
-            const f = b.life / b.max;
+            const f = (b.life / b.max) * (b.fo === undefined ? 1 : Math.max(b.fo / FADE_S, 0));
             ctx.beginPath();
             ctx.moveTo(b.pts[0][0], b.pts[0][1]);
             for (let i = 1; i < b.pts.length; i++) ctx.lineTo(b.pts[i][0], b.pts[i][1]);

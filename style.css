@@ -435,6 +435,9 @@ button:focus-visible,
     font-variant-numeric: tabular-nums;
 }
 
+.study-gain b[data-len="l"] { font-size: 2.1rem; }
+.study-gain b[data-len="xl"] { font-size: 1.7rem; }
+
 .study-gain i {
     font-style: normal;
     font-size: 1.1rem;

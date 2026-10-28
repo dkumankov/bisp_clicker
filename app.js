@@ -1,7 +1,7 @@
 import { GameEngine } from './game-engine.js?v=3cc8f7fb';
 import { SaveManager, MIN_OFFLINE_SECONDS } from './save-manager.js?v=2cfa2265';
 import { SoundManager } from './sound-manager.js?v=ea641017';
-import { ComboFx } from './combo-fx.js?v=cefcf6fc';
+import { ComboFx } from './combo-fx.js?v=368e8de8';
 import { fetchLeaderboard, postScore, validateName, cleanName, timeAgo, SUBMIT_INTERVAL_MS } from './leaderboard.js?v=3d8d3fbe';
 import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, COMBO_CONFIG, GOLDEN_CONFIG, CAMPUS_STAGES, MILESTONES } from './data.js?v=c725eec6';
 
@@ -485,9 +485,13 @@ function updateStats() {
         iqPerSecDisplay.textContent = lastPerSecText = perSecText;
         popElement(iqPerSecDisplay);
     }
-    const clickText = '+' + game.formatNumber(game.calculateClickPower());
+    // While a streak is active the button shows what a click is worth right now (streak multiplier applied)
+    const streakMult = game.combo >= 2 ? game.getComboMultiplier() : 1;
+    const clickText = '+' + game.formatNumber(game.calculateClickPower() * streakMult);
     if (clickText !== lastClickText) {
         clickPowerDisplay.textContent = lastClickText = clickText;
+        // Long strings (e.g. "+1234.5T") get a smaller font so the button never overflows
+        clickPowerDisplay.dataset.len = clickText.length >= 8 ? 'xl' : clickText.length >= 6 ? 'l' : '';
         popElement(clickPowerDisplay);
     }
     graduationsDisplay.textContent = game.graduations;
