@@ -1,4 +1,4 @@
-// Study-button effects start at tier 1 (light glow in CSS, particles from tier 2).
+// Study-button effects start at tier 1 (CSS surface layer + flares landing on it).
 // Epic combo effects for the high combo tiers (5..10 = 200, 300, 400, 500, 750, 1000 clicks).
 // CSS (style.css, body[data-combo-tier] / .combo[data-tier]) draws the panel itself;
 // this module adds ONE shared canvas for particles (embers, plasma arcs, ice, black-hole
@@ -23,17 +23,19 @@ const PALETTE = { 1: WARM, 2: WARM, 3: WARM.concat(FIRE), 4: FIRE, 5: FIRE, 6: P
 // btn*: effects that live on the Study button itself and grow with the tier
 // (toBtn = sparks flying from the panel, btnSpark = sparks off the rim,
 // btnBolt = tiny lightning arcs, btnSpiral = particles swirling into the button).
+// surf = flares that ignite ON the button surface (toBtn sparks also land and flare there).
 const EMIT = {
-    // Tiers 1-4 (10..100 clicks): the button warms up. Tier 1 is CSS only.
-    2: { btnSpark: 0.8 },
-    3: { btnSpark: 2, btnEmber: 3, toBtn: 1.2 },
-    4: { btnSpark: 4, btnEmber: 7, toBtn: 2.6 },
-    5: { ember: 38, toBtn: 4 },
-    6: { spark: 26, bolt: 7, toBtn: 6, btnSpark: 6, btnBolt: 0.8 },
-    7: { ember: 20, ice: 22, toBtn: 8, btnSpark: 14, btnBolt: 1.6 },
-    8: { spiral: 40, star: 14, toBtn: 8, btnSpark: 10, btnSpiral: 18 },
-    9: { radial: 46, toBtn: 22, btnSpark: 20, ringEvery: 1.4 },
-    10: { spiral: 28, star: 10, radial: 30, toBtn: 30, btnSpark: 26, btnSpiral: 14, bolt: 4, btnBolt: 2, ringEvery: 1.0 }
+    // Tiers 1-4 (10..100 clicks): the button warms up.
+    1: { surf: 1.5, toBtn: 0.4 },
+    2: { btnSpark: 0.8, surf: 3, toBtn: 0.9 },
+    3: { btnSpark: 2, btnEmber: 3, toBtn: 1.8, surf: 6 },
+    4: { btnSpark: 4, btnEmber: 7, toBtn: 3, surf: 10 },
+    5: { ember: 38, toBtn: 6, surf: 18, btnEmber: 6 },
+    6: { spark: 26, bolt: 7, toBtn: 7, btnSpark: 6, btnBolt: 0.8, surf: 16 },
+    7: { ember: 20, ice: 22, toBtn: 9, btnSpark: 14, btnBolt: 1.6, surf: 18 },
+    8: { spiral: 40, star: 14, toBtn: 9, btnSpark: 10, btnSpiral: 18, surf: 14 },
+    9: { radial: 46, toBtn: 22, btnSpark: 20, ringEvery: 1.4, surf: 32 },
+    10: { spiral: 28, star: 10, radial: 30, toBtn: 30, btnSpark: 26, btnSpiral: 14, bolt: 4, btnBolt: 2, ringEvery: 1.0, surf: 30 }
 };
 
 const BANNER = {
@@ -346,6 +348,10 @@ export class ComboFx {
                 vx: rnd(-10, 10), vy: -rnd(30, 70), life, max: life, size: rnd(1.6, 3), color: pick(pal), ph: rnd(0, TAU)
             });
         }
+        for (let i = n('surf', e.surf || 0); i > 0; i--) {
+            // A flare ignites on the button surface and burns out there
+            this.spawnSurf(bx, by, rad, null);
+        }
         for (let i = n('btnSpiral', e.btnSpiral || 0); i > 0; i--) {
             const life = rnd(0.9, 1.5);
             this.add({
@@ -370,6 +376,27 @@ export class ComboFx {
             pts.push([ex, ey]);
             this.bolts.push({ pts, life: 0.12, max: 0.12, color: pick(pal) });
         }
+    }
+
+    /** Flare on the button surface. (x, y) = landing point, or null for a random spot on the disc. */
+    spawnSurf(bx, by, rad, at) {
+        const tier = this.tier;
+        let x, y;
+        if (at) { x = at[0]; y = at[1]; } else {
+            const a = rnd(0, TAU), r = rad * 0.9 * Math.sqrt(Math.random());
+            x = bx + Math.cos(a) * r; y = by + Math.sin(a) * r;
+            if (tier === 5 || tier === 9) y = by + rad * rnd(-0.2, 0.85);  // fire licks the lower part more
+        }
+        let color = pick(PALETTE[tier] || WARM);
+        let vy = -rnd(10, 34), vx = rnd(-8, 8);
+        const life = rnd(0.35, 0.9);
+        if (tier === 7) {                       // left half fire, right half frost
+            const fire = x < bx;
+            color = pick(fire ? FIRE : ICE);
+            if (!fire) { vy = rnd(-4, 4); vx = rnd(-4, 4); }
+        }
+        if (tier === 6) { vy = rnd(-20, 20); vx = rnd(-20, 20); }
+        this.add({ k: 'surf', x, y, vx, vy, bx, by, rr: rad * 0.94, life, max: life, size: rnd(1.6, 3.4), color, pull: tier === 8, sq: tier === 7 && x >= bx, ph: rnd(0, TAU) });
     }
 
     spawnBolt(palette) {
@@ -426,8 +453,21 @@ export class ComboFx {
                 p.y = (1 - t) * (1 - t) * p.sy + 2 * (1 - t) * t * my + t * t * p.ey;
                 if (p.t >= 1) {
                     dead = true;
-                    for (let k = 0; k < 2; k++) this.spawnSpark(p.ex, p.ey, PALETTE[this.tier] || FIRE, rnd(40, 110), rnd(0.2, 0.4));
+                    // Lands: a few sparks bounce off and the rest flare on the surface
+                    this.spawnSpark(p.ex, p.ey, PALETTE[this.tier] || FIRE, rnd(40, 110), rnd(0.2, 0.4));
+                    if (this.br) {
+                        const rad = this.br.width / 2;
+                        const bx = this.br.left + rad, by = this.br.top + this.br.height / 2;
+                        for (let k = 0; k < 3; k++) this.spawnSurf(bx, by, rad, [p.ex + rnd(-6, 6), p.ey + rnd(-6, 6)]);
+                    }
                 }
+            } else if (p.k === 'surf') {
+                p.ph += dt * 9;
+                p.x += (p.vx + Math.sin(p.ph) * 6) * dt; p.y += p.vy * dt;
+                if (p.pull) {                   // gravity: drawn into the centre
+                    p.x += (p.bx - p.x) * 1.6 * dt; p.y += (p.by - p.y) * 1.6 * dt;
+                }
+                if (Math.hypot(p.x - p.bx, p.y - p.by) > p.rr) dead = true;
             }
             if (dead) { ps[i] = ps[ps.length - 1]; ps.pop(); }
         }
@@ -491,6 +531,19 @@ export class ComboFx {
                     ctx.arc(p.x, p.y, p.size, 0, TAU);
                     ctx.fill();
                 }
+            } else if (p.k === 'surf') {
+                // Flash in fast, fade out: a soft halo plus a hot core (additive blend)
+                const a = Math.sin(Math.PI * (1 - f)) * (0.75 + 0.25 * Math.sin(p.ph));
+                const s = p.size * (0.6 + 0.6 * a);
+                ctx.globalAlpha = a * 0.3;
+                ctx.beginPath(); ctx.arc(p.x, p.y, s * 2.6, 0, TAU); ctx.fill();
+                ctx.globalAlpha = Math.min(a * 1.1, 1);
+                ctx.beginPath();
+                if (p.sq) {                     // frost glint
+                    ctx.moveTo(p.x, p.y - s * 1.7); ctx.lineTo(p.x + s * 0.6, p.y);
+                    ctx.lineTo(p.x, p.y + s * 1.7); ctx.lineTo(p.x - s * 0.6, p.y);
+                } else ctx.arc(p.x, p.y, s, 0, TAU);
+                ctx.fill();
             } else if (p.k === 'toBtn') {
                 ctx.globalAlpha = 0.95;
                 ctx.lineWidth = p.size;

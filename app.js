@@ -1,9 +1,9 @@
-import { GameEngine } from './game-engine.js?v=16';
-import { SaveManager, MIN_OFFLINE_SECONDS } from './save-manager.js?v=16';
-import { SoundManager } from './sound-manager.js?v=16';
-import { ComboFx } from './combo-fx.js?v=16';
-import { fetchLeaderboard, postScore, validateName, cleanName, timeAgo, SUBMIT_INTERVAL_MS } from './leaderboard.js?v=16';
-import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, COMBO_CONFIG, GOLDEN_CONFIG, CAMPUS_STAGES, MILESTONES } from './data.js?v=16';
+import { GameEngine } from './game-engine.js?v=17';
+import { SaveManager, MIN_OFFLINE_SECONDS } from './save-manager.js?v=17';
+import { SoundManager } from './sound-manager.js?v=17';
+import { ComboFx } from './combo-fx.js?v=17';
+import { fetchLeaderboard, postScore, validateName, cleanName, timeAgo, SUBMIT_INTERVAL_MS } from './leaderboard.js?v=17';
+import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, COMBO_CONFIG, GOLDEN_CONFIG, CAMPUS_STAGES, MILESTONES } from './data.js?v=17';
 
 // Initialize game engine, save manager, and sound manager
 const game = new GameEngine();
