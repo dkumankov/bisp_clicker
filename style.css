@@ -1664,7 +1664,8 @@ button:focus-visible,
     45% { transform: scale(1.1); } 70% { transform: scale(1); }
 }
 
-/* -- The Study button joins in at 750 and 1000 -- */
+/* -- The Study button joins in from 200 and grows with every tier:
+      5 warm glow · 6 electric · 7 cold aura · 8 gravity pull · 9 fire · 10 heartbeat + rainbow ring -- */
 .study-button::after {
     content: '';
     position: absolute;
@@ -1672,6 +1673,68 @@ button:focus-visible,
     border-radius: 50%;
     opacity: 0;
     pointer-events: none;
+}
+/* 5 · Scholar: warm glow breathing with the panel (0.7s alternate) */
+body[data-combo-tier="5"] .study-button {
+    border-color: #ffe6b0;
+    box-shadow: 0 0 22px 4px rgba(255, 150, 40, 0.55), 0 8px 36px rgba(245, 87, 108, 0.45), inset 0 -8px 20px rgba(0, 0, 0, 0.12);
+    animation: cx-btn-warm 0.7s ease-in-out infinite alternate;
+}
+body[data-combo-tier="5"] .study-button::after {
+    background: radial-gradient(circle, rgba(255, 220, 140, 0.45), rgba(255, 120, 0, 0.15) 60%, transparent 75%);
+    animation: cx-btn-glow 0.7s ease-in-out infinite alternate;
+}
+/* 6 · Scientist: stronger glow + electric flicker */
+body[data-combo-tier="6"] .study-button {
+    border-color: #d6ecff;
+    box-shadow: 0 0 28px 6px rgba(255, 150, 60, 0.6), 0 0 56px 12px rgba(127, 208, 255, 0.45), inset 0 -8px 20px rgba(0, 0, 0, 0.12);
+    animation: cx-btn-volt 0.5s ease-in-out infinite alternate;
+}
+body[data-combo-tier="6"] .study-button::after {
+    background: radial-gradient(circle at 25% 30%, rgba(127, 208, 255, 0.55), transparent 45%), radial-gradient(circle at 78% 72%, rgba(181, 123, 255, 0.5), transparent 45%);
+    animation: cx-flicker 0.17s steps(2, end) infinite;
+}
+/* 7 · Prodigy: cold aura + ice rim, sparks more visible */
+body[data-combo-tier="7"] .study-button {
+    border-color: #e6fbff;
+    box-shadow: 0 0 32px 8px rgba(120, 220, 255, 0.75), 0 0 70px 16px rgba(60, 120, 255, 0.45), inset 0 -8px 20px rgba(0, 0, 0, 0.12);
+    animation: cx-btn-cold 1s ease-in-out infinite alternate;
+}
+body[data-combo-tier="7"] .study-button::after {
+    background: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, 0.55) 50%, transparent 65%), radial-gradient(circle, transparent 50%, rgba(120, 220, 255, 0.4) 100%);
+    background-size: 220% 100%, 100% 100%;
+    animation: cx-btn-frost 1.8s linear infinite;
+}
+/* 8 · Mastermind: gravity pull toward the hole + swirling violet/gold ring */
+body[data-combo-tier="8"] .study-button {
+    border-color: #e8d8ff;
+    box-shadow: 0 0 34px 8px rgba(150, 90, 255, 0.8), 0 0 80px 18px rgba(255, 157, 46, 0.4), inset 0 -8px 20px rgba(0, 0, 0, 0.12);
+    animation: cx-btn-pull 2.4s ease-in-out infinite;
+}
+body[data-combo-tier="8"] .study-button::after {
+    background: conic-gradient(#7a3cff, #ff9d2e, #7a3cff, #2a0a6a, #ff9d2e, #7a3cff);
+    -webkit-mask-image: radial-gradient(circle, transparent 55%, #000 100%);
+    mask-image: radial-gradient(circle, transparent 55%, #000 100%);
+    opacity: 0.4;
+    animation: cx-spin 3s linear infinite;
+}
+@keyframes cx-btn-warm {
+    from { box-shadow: 0 0 16px 2px rgba(255, 150, 40, 0.4), 0 8px 36px rgba(245, 87, 108, 0.45), inset 0 -8px 20px rgba(0, 0, 0, 0.12); }
+    to { box-shadow: 0 0 30px 7px rgba(255, 170, 50, 0.7), 0 10px 44px rgba(245, 87, 108, 0.6), inset 0 -8px 20px rgba(0, 0, 0, 0.12); }
+}
+@keyframes cx-btn-glow { from { opacity: 0.3; } to { opacity: 1; } }
+@keyframes cx-btn-volt {
+    from { box-shadow: 0 0 22px 4px rgba(255, 150, 60, 0.5), 0 0 44px 8px rgba(127, 208, 255, 0.3), inset 0 -8px 20px rgba(0, 0, 0, 0.12); }
+    to { box-shadow: 0 0 34px 9px rgba(255, 170, 70, 0.75), 0 0 66px 16px rgba(127, 208, 255, 0.6), inset 0 -8px 20px rgba(0, 0, 0, 0.12); }
+}
+@keyframes cx-btn-cold {
+    from { box-shadow: 0 0 24px 5px rgba(120, 220, 255, 0.55), 0 0 56px 10px rgba(60, 120, 255, 0.3), inset 0 -8px 20px rgba(0, 0, 0, 0.12); }
+    to { box-shadow: 0 0 38px 10px rgba(150, 235, 255, 0.9), 0 0 84px 20px rgba(60, 120, 255, 0.55), inset 0 -8px 20px rgba(0, 0, 0, 0.12); }
+}
+@keyframes cx-btn-frost { 0% { background-position: -120% 0, 0 0; opacity: 0.7; } 50% { opacity: 1; } 100% { background-position: 220% 0, 0 0; opacity: 0.7; } }
+@keyframes cx-btn-pull {
+    0%, 100% { transform: translate(0, 0) scale(1); box-shadow: 0 0 28px 6px rgba(150, 90, 255, 0.65), 0 0 66px 14px rgba(255, 157, 46, 0.3), inset 0 -8px 20px rgba(0, 0, 0, 0.12); }
+    50% { transform: translate(0, -3px) scale(0.97, 1.02); box-shadow: 0 0 40px 10px rgba(150, 90, 255, 0.95), 0 0 92px 22px rgba(255, 157, 46, 0.5), inset 0 -8px 20px rgba(0, 0, 0, 0.12); }
 }
 body[data-combo-tier="9"] .study-button {
     border-color: #fff2b0;

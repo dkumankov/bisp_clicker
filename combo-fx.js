@@ -18,13 +18,16 @@ const RAINBOW = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#1dd1a1', '#ffffff
 const PALETTE = { 5: FIRE, 6: PLASMA, 7: FIRE.concat(ICE), 8: VOID, 9: NUKE, 10: RAINBOW };
 
 // Spawn rates (particles/second) per tier. Higher tiers combine the lower ideas.
+// btn*: effects that live on the Study button itself and grow with the tier
+// (toBtn = sparks flying from the panel, btnSpark = sparks off the rim,
+// btnBolt = tiny lightning arcs, btnSpiral = particles swirling into the button).
 const EMIT = {
-    5: { ember: 38 },
-    6: { spark: 26, bolt: 7 },
-    7: { ember: 20, ice: 22 },
-    8: { spiral: 40, star: 14 },
-    9: { radial: 46, toBtn: 22, ringEvery: 1.4 },
-    10: { spiral: 28, star: 10, radial: 30, toBtn: 30, bolt: 4, ringEvery: 1.0 }
+    5: { ember: 38, toBtn: 4 },
+    6: { spark: 26, bolt: 7, toBtn: 6, btnSpark: 6, btnBolt: 0.8 },
+    7: { ember: 20, ice: 22, toBtn: 8, btnSpark: 14, btnBolt: 1.6 },
+    8: { spiral: 40, star: 14, toBtn: 8, btnSpark: 10, btnSpiral: 18 },
+    9: { radial: 46, toBtn: 22, btnSpark: 20, ringEvery: 1.4 },
+    10: { spiral: 28, star: 10, radial: 30, toBtn: 30, btnSpark: 26, btnSpiral: 14, bolt: 4, btnBolt: 2, ringEvery: 1.0 }
 };
 
 const BANNER = {
@@ -143,6 +146,13 @@ export class ComboFx {
         this.burstAt(cx, cy, tier >= 9 ? 40 : 24, PALETTE[tier]);
         this.addRing(cx, cy, PALETTE[tier][0], 220, 0, 3);
 
+        if (tier < 9 && this.br) {
+            // Lower tiers: a small share of the effect hops onto the Study button
+            const bx = this.br.left + this.br.width / 2;
+            const by = this.br.top + this.br.height / 2;
+            this.burstAt(bx, by, 6 + (tier - 5) * 4, PALETTE[tier]);
+            this.addRing(bx, by, PALETTE[tier][0], this.br.width * (0.8 + (tier - 5) * 0.1), 0.1, 2 + (tier - 5) * 0.5);
+        }
         if (tier >= 9) {
             this.flash(tier === 10 ? 'rgba(255,255,255,0.95)' : 'rgba(255,170,60,0.85)', tier === 10 ? 900 : 600);
             this.shake(this.combo, tier === 10 ? 10 : 7, 600);
@@ -281,6 +291,7 @@ export class ComboFx {
             }
         }
         if (e.bolt) for (let i = n('bolt', e.bolt); i > 0; i--) this.spawnBolt(pal);
+        if (this.br) this.emitButton(e, n, pal);
 
         if (e.ringEvery) {
             this.ringTimer -= dt;
@@ -289,6 +300,48 @@ export class ComboFx {
                 this.addRing(cx, cy, pick(pal), 190, 0, 3);
                 if (this.br) this.addRing(this.br.left + this.br.width / 2, this.br.top + this.br.height / 2, pick(pal), this.br.width * 0.8, 0.15, 3);
             }
+        }
+    }
+
+    /** Effects hugging the Study button (tiers 6+) */
+    emitButton(e, n, pal) {
+        const br = this.br;
+        const bx = br.left + br.width / 2;
+        const by = br.top + br.height / 2;
+        const rad = br.width / 2;
+        for (let i = n('btnSpark', e.btnSpark || 0); i > 0; i--) {
+            // Spark leaves the rim, mostly outward
+            const a = rnd(0, TAU);
+            const sp = rnd(40, 120);
+            const life = rnd(0.25, 0.5);
+            this.add({
+                k: 'spark', x: bx + Math.cos(a) * rad * 0.95, y: by + Math.sin(a) * rad * 0.95,
+                vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 20, life, max: life, size: rnd(1.4, 2.6), color: pick(pal)
+            });
+        }
+        for (let i = n('btnSpiral', e.btnSpiral || 0); i > 0; i--) {
+            const life = rnd(0.9, 1.5);
+            this.add({
+                k: 'spiral', cx: bx, cy: by, r: rad * rnd(0.55, 0.8), a: rnd(0, TAU), w: rnd(1.6, 2.6), vr: rad * rnd(0.12, 0.25),
+                px: 0, py: 0, life, max: life, size: rnd(1.3, 2.4), color: pick(pal), trail: true, rmin: rad * 0.25
+            });
+        }
+        for (let i = n('btnBolt', e.btnBolt || 0); i > 0; i--) {
+            if (this.bolts.length > 6) break;
+            // A short arc off the rim
+            const a = rnd(0, TAU);
+            const sx = bx + Math.cos(a) * rad * 0.98;
+            const sy = by + Math.sin(a) * rad * 0.98;
+            const len = rnd(18, 42);
+            const ex = sx + Math.cos(a + rnd(-0.5, 0.5)) * len;
+            const ey = sy + Math.sin(a + rnd(-0.5, 0.5)) * len;
+            const pts = [[sx, sy]];
+            for (let k = 1; k < 4; k++) {
+                const t = k / 4;
+                pts.push([sx + (ex - sx) * t + rnd(-5, 5), sy + (ey - sy) * t + rnd(-5, 5)]);
+            }
+            pts.push([ex, ey]);
+            this.bolts.push({ pts, life: 0.12, max: 0.12, color: pick(pal) });
         }
     }
 
@@ -335,7 +388,7 @@ export class ComboFx {
                 p.r -= p.vr * dt * (1 + 60 / (p.r + 20));
                 p.x = p.cx + Math.cos(p.a) * p.r * 1.5;
                 p.y = p.cy + Math.sin(p.a) * p.r * 0.7;
-                if (p.r < 10) dead = true;
+                if (p.r < (p.rmin || 10)) dead = true;
             } else if (p.k === 'toBtn') {
                 p.t += dt / p.max;
                 const t = Math.min(p.t, 1);
