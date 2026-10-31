@@ -1,4 +1,4 @@
-import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, ACHIEVEMENTS, PRESTIGE_CONFIG, COMBO_CONFIG, GOLDEN_CONFIG, DAILY_BONUS_CONFIG, CAMPUS_STAGES, ECONOMY_CONFIG } from './data.js?v=c725eec6';
+import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, ACHIEVEMENTS, PRESTIGE_CONFIG, COMBO_CONFIG, GOLDEN_CONFIG, DAILY_BONUS_CONFIG, CAMPUS_STAGES, ECONOMY_CONFIG, AUTOCLICKER_CONFIG } from './data.js?v=fe356059';
 
 export class GameEngine {
     constructor() {
@@ -26,6 +26,9 @@ export class GameEngine {
 
         this.achievements = {};
         ACHIEVEMENTS.forEach(a => this.achievements[a.id] = false);
+
+        // Auto-clickers owned (saved, reset by graduation like the other purchases)
+        this.autoclickers = 0;
 
         // Prestige
         this.certificates = 0;
@@ -330,6 +333,35 @@ export class GameEngine {
         return total * this.getGlobalMultiplier(includeEvents);
     }
 
+    /** Price of the next auto-clicker: base * multiplier^owned */
+    getAutoclickerCost() {
+        return AUTOCLICKER_CONFIG.base_cost * Math.pow(AUTOCLICKER_CONFIG.cost_multiplier, this.autoclickers);
+    }
+
+    purchaseAutoclicker() {
+        const cost = this.getAutoclickerCost();
+        if (!this.canAfford(cost)) return false;
+        this.iq -= cost;
+        this.autoclickers++;
+        return true;
+    }
+
+    /** Clicks per second made by all auto-clickers */
+    getAutoclicksPerSecond() {
+        return this.autoclickers * AUTOCLICKER_CONFIG.clicks_per_second;
+    }
+
+    /** IQ/s the auto-clickers produce right now (real clicks: click power x current combo multiplier) */
+    getAutoclickIPS() {
+        const cps = this.getAutoclicksPerSecond();
+        return cps > 0 ? cps * this.calculateClickPower() * this.getComboMultiplier() : 0;
+    }
+
+    /** Passive IQ/s plus auto-click income: what the HUD shows and the leaderboard receives */
+    getTotalIQPerSecond(includeEvents = true) {
+        return this.calculateIQPerSecond(includeEvents) + this.getAutoclickIPS();
+    }
+
     calculateBuildingCost(buildingType, buildingId) {
         if (buildingType === "student") {
             const studentData = STUDENTS.find(s => s.id === buildingId);
@@ -467,6 +499,7 @@ export class GameEngine {
         FACILITIES.forEach(f => this.facilities[f.id] = false);
         this.upgrades = {};
         UPGRADES.forEach(u => this.upgrades[u.id] = false);
+        this.autoclickers = 0;
 
         // Keep achievements and prestige stats
         this.certificates += newCertificates;

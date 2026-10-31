@@ -1,12 +1,12 @@
 // BISP Clicker leaderboard — Cloudflare Worker + KV.
 //
 // KV layout (binding: LEADERBOARD):
-//   score:<name lowercase> -> JSON {name, iq, prestige, lastSeen}
+//   score:<name lowercase> -> JSON {name, iq, iqPerSec?, prestige, lastSeen}  (iqPerSec: latest reported rate, absent on old records)
 //   lb:top                 -> JSON array with the top entries (served by GET /leaderboard)
 //   rl:<ip>                -> timestamp (ms) of the last accepted write from that IP
 //
 // Routes (also reachable under the /api prefix, e.g. game.dimario.pro/api/score):
-//   POST /score        {name, iq, prestige}
+//   POST /score        {name, iq, prestige, iqPerSec?}
 //   GET  /leaderboard
 //   POST /reset        header X-Reset-Token: <RESET_TOKEN secret> — wipe all scores
 
@@ -32,6 +32,11 @@ const MAX_PRESTIGE = 100000;
 //        9     2e7         5e8           3e9              2.6e14
 //       12     3.5e9       3e10          2e11             1e15
 //       15     2e11        2e12          1e13             1e15
+// Auto-clickers (data.js) add click income (clicks/s x click power x combo, up to x8) on top of the
+// passive rate. Simulated on the engine: with every upgrade/facility and 100 of each student the
+// auto-clickers add up to ~2.5x the passive rate, so honest totals reach ~3.5x the bot figures
+// above; that nearly fills the ceiling around prestige 4. Hence +50% headroom for everything below.
+const AUTOCLICK_HEADROOM = 1.5;
 const BASE_IQ_PER_SEC = 200_000;         // Ceiling for early players (prestige <= 3)
 const IQ_PER_SEC_BASE_LATE = 2000;       // Late ceiling = 2000 * 4^prestige
 const IQ_GROWTH_PER_PRESTIGE = 4;
@@ -124,6 +129,12 @@ async function handleScore(request, env, cors) {
     return json({ error: `IQ too high for ${entry.prestige} graduations (max ${absCap})` }, 422, cors);
   }
 
+  // Reported IQ/s must be plausible for the graduations count (same ceiling as the gain check)
+  const ipsCap = maxIqPerSec(entry.prestige);
+  if (entry.iqPerSec !== undefined && entry.iqPerSec > ipsCap) {
+    return json({ error: `IQ/s too high for ${entry.prestige} graduations (max ${Math.floor(ipsCap)})` }, 422, cors);
+  }
+
   // An explicit reset (iq: 0 and prestige: 0) deletes the player's record
   const isReset = entry.iq === 0 && entry.prestige === 0;
 
@@ -166,28 +177,30 @@ async function handleScore(request, env, cors) {
     prestige: prev ? Math.max(prev.prestige, entry.prestige) : entry.prestige,
     lastSeen: now
   };
+  // Latest reported rate (not a best): shows what the player earns now. Old clients omit it.
+  if (entry.iqPerSec !== undefined) saved.iqPerSec = entry.iqPerSec;
 
   await env.LEADERBOARD.put(key, JSON.stringify(saved));
   await env.LEADERBOARD.put(rlKey, String(now), { expirationTtl: RATE_LIMIT_TTL_S });
   await updateTop(env, saved);
 
-  return json({ ok: true, iq: saved.iq, prestige: saved.prestige }, 200, cors);
+  return json({ ok: true, iq: saved.iq, iqPerSec: saved.iqPerSec ?? null, prestige: saved.prestige }, 200, cors);
 }
 
 // ===== Helpers =====
 
 function maxIqPerSec(prestige) {
-  return Math.max(BASE_IQ_PER_SEC, IQ_PER_SEC_BASE_LATE * Math.pow(IQ_GROWTH_PER_PRESTIGE, prestige));
+  return AUTOCLICK_HEADROOM * Math.max(BASE_IQ_PER_SEC, IQ_PER_SEC_BASE_LATE * Math.pow(IQ_GROWTH_PER_PRESTIGE, prestige));
 }
 
 function maxIqFor(prestige) {
   return Math.min(MAX_IQ, BASE_MAX_IQ * Math.pow(IQ_GROWTH_PER_PRESTIGE, prestige));
 }
 
-/** Return a clean {name, iq, prestige} or null when the payload is not acceptable */
+/** Return a clean {name, iq, prestige, iqPerSec?} or null when the payload is not acceptable */
 function validate(body) {
   if (!body || typeof body !== 'object') return null;
-  const { name, iq, prestige } = body;
+  const { name, iq, prestige, iqPerSec } = body;
 
   if (typeof name !== 'string') return null;
   const trimmed = name.trim().replace(/\s+/g, ' ');
@@ -196,7 +209,10 @@ function validate(body) {
   if (!Number.isInteger(iq) || iq < 0 || iq > MAX_IQ) return null;
   if (!Number.isInteger(prestige) || prestige < 0 || prestige > MAX_PRESTIGE) return null;
 
-  return { name: trimmed, iq, prestige };
+  // Optional (old clients don't send it), but when present it must be a sane non-negative integer
+  if (iqPerSec !== undefined && (!Number.isInteger(iqPerSec) || iqPerSec < 0 || iqPerSec > MAX_IQ)) return null;
+
+  return { name: trimmed, iq, prestige, iqPerSec };
 }
 
 /** Merge one entry into the cached top list (read-modify-write; races only cost a stale row) */

@@ -17,6 +17,7 @@ export class SoundManager {
         this.master = null;
         this.enabled = this.loadPreference();
         this.lastClickTime = 0;
+        this.lastAutoClickTime = 0;
 
         this.installUnlockHandlers();
     }
@@ -136,6 +137,20 @@ export class SoundManager {
         const pitch = 520 * Math.pow(2, Math.min(comboLevel, 1) * 1.2);
         this.playTone(pitch, 0.09, { type: 'triangle', volume: 0.22, slideTo: pitch * 1.5 });
         this.playNoise(0.03, { volume: 0.05 });
+    }
+
+    /**
+     * Quiet, slightly detuned click for auto-clickers: same pitch curve as playClick, but softer and
+     * rate-limited so a crowd of fingers sounds like a soft background rhythm, not a wall of noise.
+     */
+    playAutoClick(comboLevel = 0) {
+        if (!this.ready) return;
+        const now = performance.now();
+        if (now - this.lastAutoClickTime < 110) return;
+        this.lastAutoClickTime = now;
+
+        const pitch = 520 * Math.pow(2, Math.min(comboLevel, 1) * 1.2) * (0.94 + Math.random() * 0.12);
+        this.playTone(pitch, 0.07, { type: 'triangle', volume: 0.08, slideTo: pitch * 1.4 });
     }
 
     /** Coin-like two-tone chime */

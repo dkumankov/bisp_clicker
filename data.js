@@ -1298,6 +1298,14 @@ export const ECONOMY_CONFIG = {
     teacher_synergy_cap: 2  // Max total teacher bonus per student type (+400% = x5); legendary cap_exempt teachers ignore it
 };
 
+// Auto-clickers (fingers around the Study button): every one is a real click once per second.
+// Cost of the next one = base_cost * cost_multiplier^owned.
+export const AUTOCLICKER_CONFIG = {
+    base_cost: 100000,
+    cost_multiplier: 1.5,
+    clicks_per_second: 1
+};
+
 // Prestige configuration
 export const PRESTIGE_CONFIG = {
     certificate_bonus: 0.1,  // +10% per certificate

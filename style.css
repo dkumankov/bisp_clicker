@@ -445,6 +445,65 @@ button:focus-visible,
     letter-spacing: 1px;
 }
 
+/* Auto-clickers: fingers orbit the Study button (behind it, never over the tap zone) */
+.study-orbit {
+    position: relative;
+    display: flex;
+    justify-content: center;
+}
+
+.study-orbit > .study-button {
+    z-index: 1;
+}
+
+.finger-orbit {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 0;
+    height: 0;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.finger {
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-style: normal;
+    font-size: var(--finger-size, 22px);
+    line-height: 1;
+    will-change: transform;
+    filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.25));
+    pointer-events: none;
+}
+
+.finger-count {
+    position: absolute;
+    right: -4px;
+    bottom: 6px;
+    z-index: 2;
+    min-width: 2rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    background: var(--navy-blue);
+    border: 2px solid var(--gold);
+    color: var(--white);
+    font-size: 0.8rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    pointer-events: none;
+}
+
+.finger-count.hidden { display: none; }
+
+.lb-stats .lb-ips {
+    font-size: 0.72rem;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.8;
+}
+
 .study-rate {
     padding: 0.35rem 1rem;
     min-height: 44px;

@@ -1,4 +1,4 @@
-import { LEADERBOARD_API } from './data.js?v=c725eec6';
+import { LEADERBOARD_API } from './data.js?v=fe356059';
 
 export const NAME_MAX = 24;
 export const SUBMIT_INTERVAL_MS = 31000;  // Worker allows 1 write per IP per 30 s
@@ -19,7 +19,7 @@ export function validateName(raw) {
     return null;
 }
 
-/** @returns {Promise<Array<{name: string, iq: number, prestige: number, lastSeen: number}>>} */
+/** @returns {Promise<Array<{name: string, iq: number, iqPerSec?: number, prestige: number, lastSeen: number}>>} iqPerSec is missing on older records */
 export async function fetchLeaderboard() {
     const res = await fetch(`${LEADERBOARD_API}/leaderboard`, { cache: 'no-store' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -32,7 +32,7 @@ export async function fetchLeaderboard() {
  * Post the player's record. keepalive lets the request survive page exit.
  * @returns {Promise<boolean>} true when the server accepted the score
  */
-export async function postScore(name, iq, prestige) {
+export async function postScore(name, iq, prestige, iqPerSec = 0) {
     try {
         const res = await fetch(`${LEADERBOARD_API}/score`, {
             method: 'POST',
@@ -40,7 +40,8 @@ export async function postScore(name, iq, prestige) {
             body: JSON.stringify({
                 name: cleanName(name),
                 iq: Math.floor(Math.min(iq, MAX_IQ)),
-                prestige: Math.floor(prestige)
+                prestige: Math.floor(prestige),
+                iqPerSec: Math.max(0, Math.floor(Math.min(iqPerSec, MAX_IQ)) || 0)
             }),
             keepalive: true
         });

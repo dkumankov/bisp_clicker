@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=feb1d73d">
+    <link rel="stylesheet" href="style.css?v=476808ee">
     <link rel="stylesheet" href="mobile.css?v=b0fe84ba">
 </head>
 
@@ -68,11 +68,15 @@
                         <span class="combo-meter"><span id="combo-meter-fill"></span></span>
                     </div>
                     <div class="study-rate" title="IQ per second"><b id="iq-per-sec">0</b> IQ/s</div>
-                    <button class="study-button" id="study-button" aria-label="Study">
-                        <span class="study-fx" aria-hidden="true"><i></i><i></i></span>
-                        <span class="study-text">STUDY</span>
-                        <span class="study-gain" title="IQ per click"><b id="click-power">+1</b><i>IQ</i></span>
-                    </button>
+                    <div class="study-orbit">
+                        <div class="finger-orbit" id="finger-orbit" aria-hidden="true"></div>
+                        <button class="study-button" id="study-button" aria-label="Study">
+                            <span class="study-fx" aria-hidden="true"><i></i><i></i></span>
+                            <span class="study-text">STUDY</span>
+                            <span class="study-gain" title="IQ per click"><b id="click-power">+1</b><i>IQ</i></span>
+                        </button>
+                        <span class="finger-count hidden" id="finger-count" title="Auto-clickers"></span>
+                    </div>
                 </div>
             </section>
 
@@ -247,7 +251,7 @@
     </div>
 
 
-    <script type="module" src="app.js?v=82c8d476"></script>
+    <script type="module" src="app.js?v=28011788"></script>
 </body>
 
 </html>

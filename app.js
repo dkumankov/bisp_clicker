@@ -1,15 +1,17 @@
-import { GameEngine } from './game-engine.js?v=3cc8f7fb';
-import { SaveManager, MIN_OFFLINE_SECONDS } from './save-manager.js?v=2cfa2265';
-import { SoundManager } from './sound-manager.js?v=ea641017';
+import { GameEngine } from './game-engine.js?v=fc74ce48';
+import { SaveManager, MIN_OFFLINE_SECONDS } from './save-manager.js?v=0038798c';
+import { SoundManager } from './sound-manager.js?v=4109394d';
 import { ComboFx } from './combo-fx.js?v=368e8de8';
-import { fetchLeaderboard, postScore, validateName, cleanName, timeAgo, SUBMIT_INTERVAL_MS } from './leaderboard.js?v=3d8d3fbe';
-import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, COMBO_CONFIG, GOLDEN_CONFIG, CAMPUS_STAGES, MILESTONES } from './data.js?v=c725eec6';
+import { AutoClickers } from './autoclickers.js?v=bd77463e';
+import { fetchLeaderboard, postScore, validateName, cleanName, timeAgo, SUBMIT_INTERVAL_MS } from './leaderboard.js?v=e4c9cefb';
+import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, COMBO_CONFIG, AUTOCLICKER_CONFIG, GOLDEN_CONFIG, CAMPUS_STAGES, MILESTONES } from './data.js?v=fe356059';
 
 // Initialize game engine, save manager, and sound manager
 const game = new GameEngine();
 const saveManager = new SaveManager();
 const soundManager = new SoundManager();
 let comboFx = null;  // created in init once the DOM refs exist
+let autoClickers = null;
 
 const $ = (id) => document.getElementById(id);
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -33,6 +35,7 @@ let goldenExpiresAt = 0;
 
 // ===== DOM elements =====
 const studyButton = $('study-button');
+const fingerCount = $('finger-count');
 const iqDisplay = $('iq-display');
 const iqPerSecDisplay = $('iq-per-sec');
 const graduationsDisplay = $('graduations-display');
@@ -64,6 +67,7 @@ function init() {
     displayedIQ = game.iq;
     scheduleGolden(true);
 
+    autoClickers = new AutoClickers({ host: $('finger-orbit'), button: studyButton, reduceMotion, onClick: handleAutoClick });
     setupEventListeners();
     setupLeaderboard();
     syncSoundUI();
@@ -192,15 +196,46 @@ function handleStudyClick(x, y) {
     updateStats();
 }
 
+// ===== Auto-clickers =====
+const AUTO_FX_GAP_MS = 120;     // visual feedback for auto-clicks is rate-limited, the clicks themselves are not
+const AUTO_SOUNDS_PER_SEC = 4;  // target rate of the quiet auto-click sound
+let lastAutoFxAt = 0;
+let autoFxValue = 0;            // IQ of the clicks since the last floating number
+let autoClickSeq = 0;
+
+/** One finger taps Study: a full game click (counter, combo streak, IQ), with throttled feedback */
+function handleAutoClick(angle) {
+    const value = game.handleClick();
+    autoFxValue += value;
+
+    // Few fingers: every tap clicks softly. Many: every k-th tap, so it stays a rhythm and not noise
+    const every = Math.max(1, Math.ceil(game.getAutoclicksPerSecond() / AUTO_SOUNDS_PER_SEC));
+    if (autoClickSeq++ % every === 0) {
+        soundManager.playAutoClick(game.combo / COMBO_CONFIG.tiers[COMBO_CONFIG.tiers.length - 1].min);
+    }
+
+    const now = performance.now();
+    if (now - lastAutoFxAt < AUTO_FX_GAP_MS) return;
+    lastAutoFxAt = now;
+    // Landing point: on the button rim, where this finger touches it
+    const rect = studyButton.getBoundingClientRect();
+    const rad = rect.width / 2 * 0.8;
+    const x = rect.left + rect.width / 2 + Math.sin(angle) * rad;
+    const y = rect.top + rect.height / 2 - Math.cos(angle) * rad;
+    spawnClickFx(x, y, autoFxValue, game.getComboMultiplier(), true);
+    autoFxValue = 0;
+}
+
 /** Juicy click feedback: button pulse, ripple, flying number, sparkles */
-function spawnClickFx(x, y, value, comboMult) {
-    // Button squish
+function spawnClickFx(x, y, value, comboMult, auto = false) {
+    // Button squish (softer for auto-clicks)
     if (!reduceMotion) {
+        const dip = auto ? 0.96 : 0.9;
         studyButton.animate(
-            [{ transform: 'scale(1)' }, { transform: 'scale(0.9)' }, { transform: 'scale(1.05)' }, { transform: 'scale(1)' }],
+            [{ transform: 'scale(1)' }, { transform: `scale(${dip})` }, { transform: 'scale(1.03)' }, { transform: 'scale(1)' }],
             { duration: 240, easing: 'ease-out' }
         );
-        iqDisplay.animate(
+        if (!auto) iqDisplay.animate(
             [{ transform: 'scale(1)' }, { transform: 'scale(1.12)' }, { transform: 'scale(1)' }],
             { duration: 160 }
         );
@@ -231,7 +266,7 @@ function spawnClickFx(x, y, value, comboMult) {
     ], 900 + Math.random() * 200);
 
     // Sparkle particles
-    if (!reduceMotion) {
+    if (!reduceMotion && !auto) {
         burst(x, y, 5 + Math.min(game.combo, 20) / 4, ['✨', '⭐', '💡'], 70);
     }
 }
@@ -480,7 +515,7 @@ function updateStats() {
         iqDisplay.textContent = lastIqText = iqText;
         if (displayedIQ > prevIQ) glowIq();
     }
-    const perSecText = game.formatNumber(game.iq_per_second);
+    const perSecText = game.formatNumber(game.iq_per_second + game.getAutoclickIPS());
     if (perSecText !== lastPerSecText) {
         iqPerSecDisplay.textContent = lastPerSecText = perSecText;
         popElement(iqPerSecDisplay);
@@ -692,10 +727,26 @@ function isUpgradeAvailable(upgrade) {
     return true;
 }
 
+function renderAutoclicker() {
+    const cost = game.getAutoclickerCost();
+    return createBuildingCard({
+        key: 'autoclicker',
+        data: {
+            name: '👆 Auto-Clicker',
+            description: 'A finger that really taps Study once a second: counts as a click, feeds the combo streak. Each next one costs 1.5x more.'
+        },
+        count: game.autoclickers,
+        cost,
+        label: `Buy: ${game.formatNumberShort(cost)} IQ (+${AUTOCLICKER_CONFIG.clicks_per_second} click/s)`,
+        buy: () => game.purchaseAutoclicker(),
+        toast: 'Auto-Clicker hired! 👆'
+    });
+}
+
 function renderUpgrades() {
     // Cheapest first, show ALL upgrades; locked ones (unmet prerequisite) render disabled
     const available = [...UPGRADES].sort((a, b) => a.cost - b.cost);
-    upgradesList.replaceChildren(...available.map(upgrade => createListItem({
+    upgradesList.replaceChildren(renderAutoclicker(), ...available.map(upgrade => createListItem({
         key: `upgrade:${upgrade.id}`,
         data: upgrade,
         owned: game.upgrades[upgrade.id],
@@ -1119,7 +1170,7 @@ async function submitScore(force = false) {
     const iq = scoreIq();
     if (!name || submitting || resetting || (!force && iq === lastSubmittedIq)) return;
     submitting = true;
-    const ok = await postScore(name, iq, game.graduations);
+    const ok = await postScore(name, iq, game.graduations, Math.floor(game.getTotalIQPerSecond(false)));
     submitting = false;
     if (ok) lastSubmittedIq = iq;
 }
@@ -1254,7 +1305,11 @@ function renderLeaderboard() {
         iq.textContent = game.formatNumber(entry.iq) + ' IQ';
         const grad = document.createElement('small');
         grad.textContent = '🎓 ' + entry.prestige;
-        stats.append(iq, grad);
+        const ips = document.createElement('small');
+        ips.className = 'lb-ips';
+        // Older records have no iqPerSec: show a dash
+        ips.textContent = Number.isFinite(entry.iqPerSec) ? game.formatNumberShort(entry.iqPerSec) + '/s' : '—/s';
+        stats.append(iq, ips, grad);
 
         li.append(rank, who, stats);
         list.appendChild(li);
@@ -1303,6 +1358,16 @@ function formatDuration(seconds) {
 }
 
 // ===== Game Loop =====
+function syncAutoclickers(now) {
+    autoClickers.setCount(game.autoclickers);
+    autoClickers.update(now);
+    const text = game.autoclickers > 0 ? `👆 ×${game.autoclickers}` : '';
+    if (fingerCount.textContent !== text) {
+        fingerCount.textContent = text;
+        fingerCount.classList.toggle('hidden', !text);
+    }
+}
+
 function gameLoop(now) {
     // Clamp so a throttled/background frame never causes a huge jump
     // (time spent away is rewarded separately as offline progress)
@@ -1310,6 +1375,7 @@ function gameLoop(now) {
     lastFrameTime = now;
 
     game.update(deltaTime);
+    syncAutoclickers(now);
 
     updateStats();
     updateAffordability();  // Only toggles CSS classes, doesn't recreate the DOM

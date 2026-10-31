@@ -1,5 +1,5 @@
 // Save format version. v1 = original format (no version field).
-// v2 only ADDS optional fields (best_combo, golden_clicks, leaderboard_name, last_bonus_date), so v1 saves load unchanged.
+// v2 only ADDS optional fields (autoclickers, best_combo, golden_clicks, leaderboard_name, last_bonus_date), so v1 saves load unchanged.
 const SAVE_VERSION = 2;
 
 // Ignore "away" times shorter than this when showing the welcome-back screen
@@ -39,6 +39,7 @@ export class SaveManager {
             achievements: gameEngine.achievements,
             certificates: gameEngine.certificates,
             graduations: gameEngine.graduations,
+            autoclickers: gameEngine.autoclickers,
             best_combo: gameEngine.best_combo,
             golden_clicks: gameEngine.golden_clicks,
             leaderboard_name: gameEngine.leaderboard_name,
@@ -84,6 +85,7 @@ export class SaveManager {
             gameEngine.achievements = mergeMap(gameEngine.achievements, saveData.achievements);
             gameEngine.certificates = num(saveData.certificates);
             gameEngine.graduations = num(saveData.graduations);
+            gameEngine.autoclickers = Math.max(0, Math.floor(num(saveData.autoclickers)));  // Missing in older saves
             gameEngine.best_combo = num(saveData.best_combo);      // Missing in v1 saves
             gameEngine.golden_clicks = num(saveData.golden_clicks);  // Missing in v1 saves
             gameEngine.leaderboard_name = typeof saveData.leaderboard_name === 'string' ? saveData.leaderboard_name : '';  // Missing in older saves
