@@ -91,15 +91,30 @@ function init() {
 function setupEventListeners() {
     // Block pinch-zoom, double-tap zoom and pull-to-refresh on touch devices
     if (window.matchMedia('(pointer: coarse)').matches) {
-        // iOS Safari ignores meta viewport: kill multi-touch gestures natively
-        document.addEventListener('gesturestart', (e) => e.preventDefault());
-        document.addEventListener('gesturechange', (e) => e.preventDefault());
-        document.addEventListener('gestureend', (e) => e.preventDefault());
-        // Double-tap zoom is disabled via CSS touch-action: manipulation; a touchend
-        // preventDefault here would swallow the click of every rapid second tap.
+        // Only zoom / scroll defaults are cancelled here. Study taps are pointerdown and shop
+        // buys are pointerup, both dispatched before these touch events, so multi-finger
+        // tapping keeps registering.
+        const block = (e) => { if (e.cancelable) e.preventDefault(); };
+        const nonPassive = { passive: false };
+        // iOS Safari ignores user-scalable=no: kill its native pinch gestures
+        for (const type of ['gesturestart', 'gesturechange', 'gestureend']) {
+            document.addEventListener(type, block, nonPassive);
+        }
+        // Pinch: any move with 2+ fingers or a non-1 scale never reaches the browser
         document.addEventListener('touchmove', (e) => {
-            if (e.scale !== undefined && e.scale !== 1) e.preventDefault();
-        }, { passive: false });
+            if (e.touches.length > 1 || (e.scale !== undefined && e.scale !== 1)) block(e);
+        }, nonPassive);
+        // Double-tap zoom: cancel a touchend within 350ms of the previous one. Controls that
+        // rely on the synthesized click (tabs, modal buttons, inputs) are exempt; they already
+        // have touch-action without double-tap zoom.
+        const CLICK_TARGETS = 'a, input, select, textarea, label, [role="button"], button:not(#study-button)';
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', (e) => {
+            const now = e.timeStamp;
+            const rapid = now - lastTouchEnd < 350;
+            lastTouchEnd = now;
+            if (rapid && !e.target.closest?.(CLICK_TARGETS)) block(e);
+        }, nonPassive);
     }
     // Study button: pointerdown for instant response (and multi-touch); click only for keyboard
     studyButton.addEventListener('pointerdown', (e) => {

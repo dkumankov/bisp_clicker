@@ -11,6 +11,8 @@
         --tabbar-h: 60px;
         --handle-h: 24px;
         --sheet-closed-h: calc(var(--tabbar-h) + var(--handle-h) + env(safe-area-inset-bottom));
+        /* Reserved slot for the docked combo panel (count row + meter + next-tier bar) */
+        --combo-slot-h: 84px;
     }
 
     /* The page itself never scrolls: HUD on top, play field fills the rest */
@@ -97,7 +99,8 @@
         min-height: 0;
         justify-content: space-between;
         gap: 0.5rem;
-        padding-bottom: calc(var(--sheet-closed-h) + 14px);
+        /* Always reserves the combo slot, so the Study button sits at the same spot with or without it */
+        padding-bottom: calc(var(--sheet-closed-h) + var(--combo-slot-h) + 14px);
     }
 
     .campus {
@@ -151,9 +154,32 @@
     .study-gain b[data-len="l"] { font-size: clamp(1.6rem, 7.5vw, 2rem); }
     .study-gain b[data-len="xl"] { font-size: clamp(1.3rem, 6vw, 1.6rem); }
 
+    /* Combo docks just above the closed bottom sheet, out of the document flow, so
+       showing or hiding it never moves the Study button. Its space is reserved in
+       .play padding-bottom. The slide uses `translate` (not `transform`) so it
+       composes with the tier animations and the tier-up pop, which own `transform`. */
     .combo {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: calc(var(--sheet-closed-h) + 8px);
+        z-index: 70;
+        margin-inline: auto;
         min-width: 0;
-        width: min(100%, 240px);
+        width: min(calc(100% - 1.5rem), 240px);
+        touch-action: none;
+        translate: 0 0;
+        opacity: 1;
+        transition: opacity 0.18s ease-out, translate 0.18s ease-out, visibility 0s;
+    }
+
+    .combo.hidden {
+        display: flex !important;
+        visibility: hidden;
+        opacity: 0;
+        translate: 0 14px;
+        pointer-events: none;
+        transition: opacity 0.25s ease-in, translate 0.25s ease-in, visibility 0s 0.25s;
     }
 
     .credits {
@@ -475,6 +501,17 @@
     .combo {
         min-width: 0;
         padding: 0.2rem 0.7rem;
+        touch-action: none;
+        transition: opacity 0.18s ease-out, visibility 0s;
+    }
+
+    /* Hidden combo keeps its box (fade only), so the Study button never shifts */
+    .combo.hidden {
+        display: flex !important;
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease-in, visibility 0s 0.25s;
     }
 
     .combo-count {
@@ -586,4 +623,22 @@
     .combo-banner { top: calc(env(safe-area-inset-top) + 20vh); }
     .combo-next { height: 13px; }
     .combo-next-label { font-size: 0.6rem; line-height: 13px; }
+}
+
+/* ----- Touch devices: no pinch / double-tap zoom anywhere -----
+   touch-action is intersected down the tree, so pan-x pan-y on the root removes
+   pinch-zoom and double-tap zoom for every descendant (buttons' manipulation
+   included) while lists can still scroll. The Study button and the combo panel
+   take no browser gestures at all, so frantic multi-finger tapping can't pan or zoom. */
+@media (pointer: coarse) {
+    html,
+    body {
+        touch-action: pan-x pan-y;
+    }
+
+    .study-button,
+    .study-orbit,
+    .combo {
+        touch-action: none;
+    }
 }
