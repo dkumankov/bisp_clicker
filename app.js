@@ -265,7 +265,7 @@ function spawnClickFx(x, y, value, comboMult, auto = false) {
     ripple.className = 'ripple';
     ripple.style.left = (x - rect.left) + 'px';
     ripple.style.top = (y - rect.top) + 'px';
-    studyButton.appendChild(ripple);
+    $('study-ripples').appendChild(ripple);
     ripple.addEventListener('animationend', () => ripple.remove());
 
     // Keep the DOM light when someone taps very fast
@@ -273,7 +273,7 @@ function spawnClickFx(x, y, value, comboMult, auto = false) {
 
     // Floating "+N" number drifting up
     const num = document.createElement('div');
-    num.className = 'fx-number' + (comboMult > 1 ? ' combo' : '');
+    num.className = 'fx-number' + (comboMult > 1 ? ' fx-number-combo' : '');
     num.textContent = '+' + game.formatNumber(value);
     placeFx(num, x, y);
     const drift = (Math.random() - 0.5) * 70;
@@ -931,13 +931,17 @@ function updateCampus(initial = false) {
         const campus = $('campus');
         campus.className = `campus stage-${stage}`;
         $('campus-name').textContent = current.name;
+        $('campus-level').textContent = `${stage + 1}/${CAMPUS_STAGES.length}`;
+        $('campus-icon').innerHTML = campusIcon(stage);
         renderScene(current.scene);
         if (!initial) {
             soundManager.playMilestone();
             showToast({ key: 'stage', icon: '🏫', kind: 'gold', title: `Your school grew into: ${current.name}!` });
             if (!reduceMotion) {
-                campus.animate(
-                    [{ transform: 'scale(1)' }, { transform: 'scale(1.04)' }, { transform: 'scale(1)' }],
+                // The edge-to-edge band on phones stays put; its icon tile pops instead
+                const phone = sheetQuery.matches;
+                (phone ? $('campus-icon') : campus).animate(
+                    [{ transform: 'scale(1)' }, { transform: `scale(${phone ? 1.2 : 1.04})` }, { transform: 'scale(1)' }],
                     { duration: 500, easing: 'ease-out' }
                 );
                 const bar = campus.querySelector('.campus-progress');
@@ -953,14 +957,45 @@ function updateCampus(initial = false) {
     const fill = $('campus-progress-fill');
     if (!next) {
         fill.style.width = '100%';
-        $('campus-next').textContent = 'Maximum level reached!';
+        const nextEl = $('campus-next');
+        delete nextEl.dataset.goal;
+        nextEl.textContent = 'Maximum level reached!';
         return;
     }
     const from = Math.log10(Math.max(current.threshold, 1));
     const to = Math.log10(next.threshold);
     const progress = Math.min(1, Math.max(0, (Math.log10(Math.max(game.lifetime_iq, 1)) - from) / (to - from)));
     fill.style.width = (progress * 100) + '%';
-    $('campus-next').textContent = `Next: ${next.name} at ${game.formatNumberShort(next.threshold)} IQ`;
+    // Reads "Next: Classroom at 1K IQ" on desktop; phones split it into label | goal
+    const nextEl = $('campus-next');
+    const goal = `${game.formatNumberShort(next.threshold)} IQ`;
+    if (nextEl.dataset.goal !== goal) {
+        nextEl.dataset.goal = goal;
+        nextEl.innerHTML = '<span class="campus-next-label">Next: <b></b></span> <span class="campus-next-at">at</span> <span class="campus-next-goal"></span>';
+        nextEl.querySelector('b').textContent = next.name;
+        nextEl.querySelector('.campus-next-goal').textContent = goal;
+    }
+}
+
+// Thin line icons for the phone campus card (24x24, stroke = currentColor), one per stage
+const CAMPUS_ICONS = [
+    // Study Corner: open book
+    '<path d="M12 6.5C10.4 5.3 8.1 4.8 4 5v13c4.1-.2 6.4.3 8 1.5 1.6-1.2 3.9-1.7 8-1.5V5c-4.1-.2-6.4.3-8 1.5z"/><path d="M12 6.5v13"/>',
+    // Classroom: chalkboard
+    '<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20l1.5-4M16 20l-1.5-4M7 8.5h6M7 11.5h4"/>',
+    // Primary School: school house
+    '<path d="M3 21h18M5 21V10l7-5 7 5v11"/><path d="M10 21v-5h4v5"/><circle cx="12" cy="11" r="1.6"/>',
+    // BISP Campus: graduation cap
+    '<path d="M2 9.5L12 4.5l10 5-10 5z"/><path d="M6 11.5v4.5c3 2.4 9 2.4 12 0v-4.5M22 9.5v5.5"/>',
+    // Grand Academy: columned hall
+    '<path d="M3 9.5L12 4l9 5.5zM4 21h16M5 18h14"/><path d="M6.5 11v7M10 11v7M14 11v7M17.5 11v7"/>',
+    // Genius City: skyline
+    '<path d="M3 21h18M5 21v-9h4M9 21V5h6v16M15 21v-7h4v7"/><path d="M11.5 8.5h1M11.5 11.5h1M11.5 14.5h1"/>'
+];
+
+function campusIcon(stage) {
+    const paths = CAMPUS_ICONS[Math.min(stage, CAMPUS_ICONS.length - 1)];
+    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
 }
 
 function renderScene(scene) {

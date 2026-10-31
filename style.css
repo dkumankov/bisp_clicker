@@ -362,6 +362,11 @@ button:focus-visible,
 }
 
 .campus-next:empty { display: none; }
+.campus-next b { font-weight: inherit; }
+
+/* Phone-only parts of the campus card (mobile.css) */
+.campus-icon,
+.campus-level { display: none; }
 
 /* ===== Study button, combo ===== */
 .study-section {
@@ -534,6 +539,19 @@ button:focus-visible,
     font-size: 1.25rem;
     font-weight: 900;
     font-variant-numeric: tabular-nums;
+}
+
+/* Ripples get their own clip layer: from combo tier 1 the button runs a `scale` animation, and
+   once composited iOS WebKit stops clipping overflow to its border-radius, so ripples parented to
+   the button itself flashed as a translucent square over it. clip-path holds under compositing. */
+.study-ripples {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: 50%;
+    overflow: hidden;
+    clip-path: circle(50%);
+    pointer-events: none;
 }
 
 .ripple {
@@ -976,7 +994,9 @@ button:focus-visible,
     white-space: nowrap;
 }
 
-.fx-number.combo {
+/* Not ".combo": that class is the streak panel, and sharing it painted the panel's dark
+   rounded box behind every floating number from combo tier 1 on */
+.fx-number-combo {
     color: var(--gold);
     font-size: 1.9rem;
 }
@@ -1851,6 +1871,7 @@ body[data-combo-epic] .study-fx {
     z-index: 0;
     border-radius: 50%;
     overflow: hidden;
+    clip-path: circle(50%);  /* same iOS compositing clip issue as .study-ripples */
     isolation: isolate;
     pointer-events: none;
 }

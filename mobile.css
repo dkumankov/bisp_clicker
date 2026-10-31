@@ -105,31 +105,6 @@
         padding-bottom: calc(var(--sheet-closed-h) + var(--combo-slot-h) + 14px);
     }
 
-    .campus {
-        padding: 0.5rem 0.75rem;
-    }
-
-    .campus-scene {
-        font-size: 1.6rem;
-        min-height: 2rem;
-    }
-
-    .campus-name {
-        margin-top: 0.1rem;
-        font-size: 1.15rem;
-    }
-
-    .campus-progress {
-        margin-top: 0.35rem;
-        height: 12px;
-    }
-
-    .campus-next {
-        margin-top: 0.4rem;
-        padding: 0.25rem 0.8rem;
-        font-size: 0.75rem;
-    }
-
     .graduate-button {
         align-self: center;
         width: 100%;
@@ -335,19 +310,10 @@
     .tab {
         font-size: 0.72rem;
     }
-
-    .campus-scene {
-        font-size: 1.4rem;
-    }
 }
 
 /* Very short portrait screens (small phones with browser bars) */
 @media (max-width: 768px) and (orientation: portrait) and (max-height: 600px) {
-    .campus-scene,
-    .campus-next {
-        display: none;
-    }
-
     .study-button {
         --study-size: min(clamp(110px, 26dvh, 180px), 52vw);
     }
@@ -423,29 +389,6 @@
         min-height: 0;
         justify-content: center;
         gap: 0.4rem;
-    }
-
-    .campus {
-        padding: 0.35rem 0.6rem;
-    }
-
-    .campus-scene {
-        font-size: 1.3rem;
-        min-height: 1.6rem;
-    }
-
-    .campus-name {
-        font-size: 0.95rem;
-        margin-top: 0;
-    }
-
-    .campus-progress {
-        margin-top: 0.2rem;
-        height: 10px;
-    }
-
-    .campus-next {
-        display: none;
     }
 
     .study-section {
@@ -780,6 +723,242 @@
     }
 }
 
+/* ----- Phones: campus card in the combo panel's language -----
+   Same deep-indigo glass and white type as the docked combo panel. Layout: a line icon
+   tile (stage accent gradient, SVG from app.js) | name + "Stage 2/6" over a slim progress
+   bar, then "Next: Classroom" with the goal "1K IQ" aligned right. The emoji scene, the
+   heavy glow and the white pill are desktop only. Portrait docks the card edge to edge
+   under the HUD (rounded bottom corners, mirroring the combo panel's rounded top). */
+@media (max-width: 768px) and (orientation: portrait), (orientation: landscape) and (max-height: 520px) {
+    .campus.stage-0 { --st-a: #6ec8ff; --st-b: #8f7bff; }
+    .campus.stage-1 { --st-a: #5fb4ff; --st-b: #b18cff; }
+    .campus.stage-2 { --st-a: #ffcf5c; --st-b: #ff7a45; }
+    .campus.stage-3 { --st-a: #2ee6a8; --st-b: #3a9bff; }
+    .campus.stage-4 { --st-a: #b49bff; --st-b: #ff7ad9; }
+    .campus.stage-5 { --st-a: #ffd76a; --st-b: #b57bff; }
+
+    .play .campus {
+        flex: none;
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: center;
+        column-gap: 0.8rem;
+        padding: 0.7rem 1rem;
+        border-radius: 18px;
+        background: linear-gradient(180deg, rgba(32, 22, 70, 0.94), rgba(20, 16, 52, 0.9));
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 6px 18px rgba(0, 0, 0, 0.18);
+        color: #fff;
+        text-shadow: none;
+    }
+
+    .campus-scene {
+        display: none;
+    }
+
+    .campus-icon {
+        display: grid;
+        place-items: center;
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, var(--st-a), var(--st-b));
+        color: #fff;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 3px 8px rgba(0, 0, 0, 0.25);
+    }
+
+    .campus-icon svg {
+        width: 24px;
+        height: 24px;
+        filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2));
+    }
+
+    .campus-info {
+        min-width: 0;
+    }
+
+    .campus-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 0.6rem;
+    }
+
+    .campus-name {
+        min-width: 0;
+        margin: 0;
+        text-align: left;
+        font-size: 1.05rem;
+        font-weight: 800;
+        line-height: 1.2;
+        letter-spacing: -0.01em;
+        text-shadow: none;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .campus-level {
+        display: inline-block;
+        flex: none;
+        padding: 0.1rem 0.45rem;
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.75);
+        font-size: 0.66rem;
+        font-weight: 700;
+        line-height: 1.4;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .campus-level::before {
+        content: "Stage ";
+    }
+
+    .campus-level:empty {
+        display: none;
+    }
+
+    .campus-progress {
+        margin-top: 0.45rem;
+        height: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35);
+    }
+
+    .campus-progress span {
+        min-width: 8px;
+        background: linear-gradient(90deg, var(--st-a), var(--st-b));
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+
+    .campus-progress span::after {
+        background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+        animation-duration: 3s;
+    }
+
+    .campus-progress.stage-up {
+        animation: barPopSoft 0.7s ease-out;
+    }
+
+    .campus-next {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 0.6rem;
+        width: auto;
+        margin: 0.4rem 0 0;
+        padding: 0;
+        border-radius: 0;
+        background: none;
+        box-shadow: none;
+        color: rgba(255, 255, 255, 0.6);
+        text-align: left;
+        font-size: 0.72rem;
+        font-weight: 600;
+        line-height: 1.3;
+    }
+
+    .campus-next-label {
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .campus-next-label b {
+        color: rgba(255, 255, 255, 0.92);
+        font-weight: 700;
+    }
+
+    .campus-next-at {
+        display: none;
+    }
+
+    .campus-next-goal {
+        flex: none;
+        color: var(--st-a);
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+    }
+
+    @keyframes barPopSoft {
+        0%, 100% { transform: scaleY(1); filter: brightness(1); }
+        30% { transform: scaleY(1.5); filter: brightness(1.3); }
+    }
+}
+
+/* Portrait: edge to edge under the HUD (cancels .game's side and top padding) */
+@media (max-width: 768px) and (orientation: portrait) {
+    .play .campus {
+        margin: -0.6rem calc(-1 * max(0.75rem, env(safe-area-inset-right))) 0 calc(-1 * max(0.75rem, env(safe-area-inset-left)));
+        padding: 0.75rem max(1.1rem, env(safe-area-inset-right)) 0.8rem max(1.1rem, env(safe-area-inset-left));
+        border-radius: 0 0 20px 20px;
+        box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.08), 0 6px 18px rgba(0, 0, 0, 0.18);
+    }
+}
+
+/* Short portrait screens: drop the next-stage line, smaller tile */
+@media (max-width: 768px) and (orientation: portrait) and (max-height: 600px) {
+    .play .campus {
+        padding-block: 0.55rem 0.6rem;
+    }
+
+    .campus-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 11px;
+    }
+
+    .campus-icon svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .campus-next {
+        display: none;
+    }
+}
+
+/* Landscape phones: compact card in the left column */
+@media (orientation: landscape) and (max-height: 520px) {
+    .play .campus {
+        column-gap: 0.6rem;
+        padding: 0.45rem 0.7rem;
+        border-radius: 14px;
+    }
+
+    .campus-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+    }
+
+    .campus-icon svg {
+        width: 19px;
+        height: 19px;
+    }
+
+    .campus-name {
+        font-size: 0.92rem;
+    }
+
+    .campus-progress {
+        margin-top: 0.3rem;
+        height: 6px;
+    }
+
+    .campus-next {
+        display: none;
+    }
+
+    /* Overflowing content clips at the bottom, never under the HUD */
+    .play {
+        justify-content: safe center;
+    }
+}
+
 /* ----- Touch devices: no pinch / double-tap zoom anywhere -----
    touch-action is intersected down the tree, so pan-x pan-y on the root removes
    pinch-zoom and double-tap zoom for every descendant (buttons' manipulation
@@ -795,5 +974,23 @@
     .study-orbit,
     .combo {
         touch-action: none;
+    }
+
+    /* Frantic tapping must not start iOS text selection, the loupe, the long-press callout or
+       a tap highlight anywhere in the game; form fields stay selectable */
+    html {
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+    }
+
+    input,
+    textarea {
+        -webkit-user-select: text;
+        user-select: text;
     }
 }
