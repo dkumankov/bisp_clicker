@@ -629,7 +629,7 @@ const purchaseHandlers = new Map();
 function setupPurchaseTaps() {
     let down = null;
     const keyOf = (e) => {
-        const btn = e.target.closest('.building-button, .list-item-button');
+        const btn = e.target.closest('.building-button, .list-item-button, .fc-tier-btn');
         return btn ? btn.closest('[data-key]')?.dataset.key : null;
     };
     contentPanel.addEventListener('pointerdown', (e) => {
@@ -745,58 +745,125 @@ function isUpgradeAvailable(upgrade) {
     return true;
 }
 
-function renderAutoclicker() {
-    const cost = game.getAutoclickerCost();
-    const step = game.getAutoclickerStep(game.autoclickers);  // the finger after this one costs that much more
-    const level = AUTOCLICKER_CONFIG.levels[game.finger_level];
-    const bonus = level.mult > 1 ? ` ${level.icon} Yours are ${level.name}: ×${level.mult} IQ per tap.` : '';
-    return createBuildingCard({
-        key: 'autoclicker',
-        data: {
-            name: '👆 Auto-Clicker',
-            description: `A finger that taps Study once a second (a real click). It pushes your combo while YOU tap too.${bonus} Price grows fast: the one after this costs ×${step.toFixed(2).replace(/\.?0+$/, '')}.`
-        },
-        count: game.autoclickers,
-        cost,
-        label: `Buy: ${game.formatNumberShort(cost)} IQ (+${AUTOCLICKER_CONFIG.clicks_per_second} click/s)`,
-        buy: () => game.purchaseAutoclicker(),
-        toast: 'Auto-Clicker hired! 👆'
-    });
-}
+// Last state the finger card was drawn with, so the next render can animate what changed
+let lastFingerCard = null;
 
-/** Finger training: one card that always offers the next level (kept on graduation) */
-function renderFingerTraining() {
-    const next = game.getNextFingerLevel();
-    const current = AUTOCLICKER_CONFIG.levels[game.finger_level];
-    if (!next) {
-        return createListItem({
-            key: 'finger-level',
-            data: { name: `${current.icon} ${current.name}`, description: `Every finger tap gives ×${current.mult} IQ. Kept forever, even after graduation.` },
-            owned: true,
-            ownedLabel: 'MAX'
-        });
+/**
+ * Fingers: one card for buying auto-clickers and training them. Head (count + quality),
+ * buy button (price, next step), then the training ladder once there is something to train
+ * (or a level kept from an earlier graduation). Two purchase keys live in it: 'autoclicker'
+ * on the card and 'finger-level' on the next trainable tier.
+ */
+function renderFingerCard() {
+    const owned = game.autoclickers;
+    const levelIdx = game.finger_level;
+    const levels = AUTOCLICKER_CONFIG.levels;
+    const level = levels[levelIdx];
+    const cost = game.getAutoclickerCost();
+    const step = game.getAutoclickerStep(owned).toFixed(2).replace(/\.?0+$/, '');
+    const canBuy = game.canAfford(cost);
+    const prev = lastFingerCard;
+    lastFingerCard = { owned, levelIdx };
+
+    const card = document.createElement('div');
+    card.className = `building-card finger-card ${canBuy ? 'affordable' : ''}`;
+    card.dataset.key = 'autoclicker';
+    card.dataset.cost = cost;
+    card.dataset.level = levelIdx;
+
+    // Short enough for one line on a 360px phone: "🎓 Trained ×2 · 8 taps/s"
+    const quality = levelIdx > 0 ? `${level.icon} ${level.name.split(' ')[0]} ×${level.mult}` : 'Plain ×1';
+    const sub = owned > 0
+        ? `${quality} · ${owned * AUTOCLICKER_CONFIG.clicks_per_second} taps/s`
+        : 'Taps Study once a second for you';
+    card.innerHTML = `
+        <div class="fc-head">
+            <div class="fc-icon" aria-hidden="true"><span class="fc-icon-glyph">👆</span>${levelIdx > 0 ? `<span class="fc-icon-badge">${level.icon}</span>` : ''}</div>
+            <div class="fc-title">
+                <div class="building-name">Auto-Fingers</div>
+                <div class="fc-sub">${sub}</div>
+            </div>
+            <div class="building-count">${owned}</div>
+        </div>
+        <div class="fc-desc">Every tap is a real click and pushes your combo while YOU tap too.</div>
+        <button class="building-button fc-buy ${canBuy ? 'affordable' : ''}">
+            <span>Buy finger · ${game.formatNumberShort(cost)} IQ</span>
+            <span class="fc-buy-note">then ×${step}</span>
+        </button>
+    `;
+    purchaseHandlers.set('autoclicker', () => attemptPurchase('autoclicker', () => game.purchaseAutoclicker(), { toast: 'Auto-Finger hired! 👆', sound: 'purchase' }));
+
+    // Training appears with the first finger, or right away if a level survived graduation
+    if (owned > 0 || levelIdx > 0) {
+        const train = document.createElement('div');
+        train.className = 'fc-train';
+        if (prev && prev.owned === 0 && prev.levelIdx === 0 && !reduceMotion) train.classList.add('fc-reveal');
+        train.innerHTML = `
+            <div class="fc-train-head">
+                <span class="fc-train-title">Training</span>
+                <span class="fc-keep">🎓 kept after graduation</span>
+            </div>
+        `;
+        const bars = [];
+        for (let i = 1; i < levels.length; i++) {
+            const tier = levels[i];
+            const done = i <= levelIdx;
+            const isNext = i === levelIdx + 1;
+            const missing = Math.max(0, tier.requires - owned);
+            const progress = done ? 1 : Math.min(1, owned / tier.requires);
+            const prevProgress = prev && prev.levelIdx < i ? Math.min(1, prev.owned / tier.requires) : progress;
+            const ready = isNext && missing === 0;
+            const affordable = ready && game.canAfford(tier.cost);
+
+            const row = document.createElement('div');
+            row.className = `fc-tier ${done ? 'done' : ready ? 'ready' : 'locked'} ${affordable ? 'affordable' : ''}`;
+            if (ready) {
+                row.dataset.key = 'finger-level';
+                row.dataset.cost = tier.cost;
+            }
+            let note;
+            if (done) note = `Active · ×${tier.mult} IQ per finger tap`;
+            else if (missing > 0) note = `${owned}/${tier.requires} fingers · ${missing} more`;
+            else if (!isNext) note = `${tier.requires} fingers ✓ · train ${levels[i - 1].name} first`;
+            else note = `${tier.requires} fingers ✓ · ready to train`;
+
+            let action;
+            if (done) action = '<span class="fc-tier-done">✓</span>';
+            else if (ready) action = `<button class="fc-tier-btn ${affordable ? 'affordable' : ''}">Train<small>${game.formatNumberShort(tier.cost)}</small></button>`;
+            else action = `<span class="fc-tier-lock">🔒<small>${game.formatNumberShort(tier.cost)}</small></span>`;
+
+            row.innerHTML = `
+                <div class="fc-tier-icon" aria-hidden="true">${tier.icon}</div>
+                <div class="fc-tier-body">
+                    <div class="fc-tier-name">${tier.name} <span class="fc-tier-mult">×${tier.mult}</span></div>
+                    <div class="fc-bar"><i style="transform: scaleX(${prevProgress.toFixed(3)})"></i></div>
+                    <div class="fc-tier-note">${note}</div>
+                </div>
+                ${action}
+            `;
+            if (prev && ready && (prev.owned < tier.requires || prev.levelIdx < levelIdx) && !reduceMotion) row.classList.add('fc-unlocked');
+            if (ready) {
+                purchaseHandlers.set('finger-level', () => attemptPurchase('finger-level', () => game.purchaseFingerLevel(), { toast: `${tier.name}! ${tier.icon}`, sound: 'upgrade' }));
+            }
+            bars.push([row.querySelector('.fc-bar i'), progress, prevProgress]);
+            train.appendChild(row);
+        }
+        card.appendChild(train);
+        // Bars grow from where they were on the previous render (the card is rebuilt each time)
+        const moved = bars.filter(([, p, p0]) => p !== p0);
+        if (moved.length) {
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+                for (const [el, p] of moved) el.style.transform = `scaleX(${p.toFixed(3)})`;
+            }));
+        }
     }
-    const missing = Math.max(0, next.requires - game.autoclickers);
-    return createListItem({
-        key: 'finger-level',
-        data: {
-            name: `${next.icon} ${next.name}`,
-            description: `Every finger tap gives ×${next.mult} IQ (now ×${current.mult}). Training is kept after graduation! `
-                + (missing > 0 ? `Needs ${next.requires} fingers (${missing} more).` : `Needs ${next.requires} fingers ✓`)
-        },
-        owned: false,
-        cost: next.cost,
-        locked: missing > 0,
-        label: `Train: ${game.formatNumberShort(next.cost)} IQ`,
-        buy: () => game.purchaseFingerLevel(),
-        toast: `${next.name}! ${next.icon}`
-    });
+    return card;
 }
 
 function renderUpgrades() {
     // Cheapest first, show ALL upgrades; locked ones (unmet prerequisite) render disabled
     const available = [...UPGRADES].sort((a, b) => a.cost - b.cost);
-    upgradesList.replaceChildren(renderAutoclicker(), renderFingerTraining(), ...available.map(upgrade => createListItem({
+    upgradesList.replaceChildren(renderFingerCard(), ...available.map(upgrade => createListItem({
         key: `upgrade:${upgrade.id}`,
         data: upgrade,
         owned: game.upgrades[upgrade.id],

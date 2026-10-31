@@ -295,6 +295,17 @@
 
 /* ----- Very narrow phones (360px and below) ----- */
 @media (max-width: 380px) and (orientation: portrait) {
+    .fc-tier {
+        gap: 0.5rem;
+        padding: 0.5rem;
+    }
+
+    .fc-tier-btn,
+    .fc-tier-lock,
+    .fc-tier-done {
+        min-width: 64px;
+    }
+
     .hud-iq {
         font-size: 1.9rem;
     }
