@@ -240,6 +240,12 @@ export class GameEngine {
             if (event.type === 'click_bonus') power *= event.multiplier;
         }
 
+        // Temporary IQ/s boosts (golden badge) also boost click power — no double-count:
+        // the click_ips_share facility uses calculateIQPerSecond(false), which excludes events
+        for (const event of this.active_events) {
+            if (event.type === 'student_bonus' || event.type === 'teacher_boost') power *= event.multiplier;
+        }
+
         return power;
     }
 

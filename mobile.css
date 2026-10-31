@@ -73,12 +73,11 @@
     }
 
     .buff-bar {
-        position: absolute;
-        left: 0.75rem;
-        right: 0.75rem;
-        top: 100%;
-        margin-top: 6px;
-        flex-basis: auto;
+        position: static;
+        width: auto;
+        max-width: none;
+        align-self: stretch;
+        margin: -0.7rem 0 -0.4rem;
     }
 
     .toasts {
@@ -480,13 +479,14 @@
     }
 
     .buff-bar {
-        position: absolute;
-        left: 50%;
-        top: 100%;
-        transform: translateX(-50%);
-        margin-top: 4px;
+        position: static;
+        left: auto;
+        top: auto;
+        transform: none;
         width: min(60vw, 320px);
-        flex-basis: auto;
+        max-width: none;
+        align-self: center;
+        margin: -0.7rem auto -0.4rem;
     }
 
     .toasts {

@@ -1,4 +1,4 @@
-import { GameEngine } from './game-engine.js?v=9f0b71ac';
+import { GameEngine } from './game-engine.js?v=1d90237d';
 import { SaveManager, MIN_OFFLINE_SECONDS } from './save-manager.js?v=a1dec568';
 import { SoundManager } from './sound-manager.js?v=8666558e';
 import { ComboFx } from './combo-fx.js?v=3872703e';
@@ -960,6 +960,7 @@ function updateGolden(now) {
     const buffBar = $('buff-bar');
     buffBar.classList.toggle('hidden', !buff);
     if (buff) {
+        $('buff-text').textContent = `x${GOLDEN_CONFIG.multiplier} IQ/s + clicks`;
         $('buff-time').textContent = Math.ceil(buff.time_remaining) + 's';
         $('buff-progress-fill').style.width = (buff.time_remaining / buff.duration * 100) + '%';
     }
@@ -994,7 +995,7 @@ function handleGoldenCatch(e) {
     burst(x, y, 18, ['🌟', '✨', '⭐', '🏅'], 140);
     showToast({
         key: 'golden', icon: '🌟', kind: 'gold',
-        title: `Golden Badge! x${GOLDEN_CONFIG.multiplier} IQ/s for ${Math.round(game.getGoldenDuration())}s`
+        title: `Golden Badge! x${GOLDEN_CONFIG.multiplier} IQ/s & click power for ${Math.round(game.getGoldenDuration())}s`
     });
 }
 

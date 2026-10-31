@@ -11,8 +11,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=738cc076">
-    <link rel="stylesheet" href="mobile.css?v=cd29b86b">
+    <link rel="stylesheet" href="style.css?v=e3f01686">
+    <link rel="stylesheet" href="mobile.css?v=c2d65667">
 </head>
 
 <body>
@@ -35,14 +35,6 @@
                 <button class="icon-button" id="leaderboard-button" aria-label="Leaderboard">🏆</button>
                 <button class="icon-button" id="settings-button" aria-label="Settings">⚙️</button>
             </div>
-
-            <!-- Active bonus (golden badge) countdown -->
-            <div class="buff-bar hidden" id="buff-bar">
-                <span class="buff-icon">🌟</span>
-                <span class="buff-text">x3.5 IQ/s</span>
-                <span class="buff-time" id="buff-time">30s</span>
-                <span class="buff-progress"><span id="buff-progress-fill"></span></span>
-            </div>
         </header>
 
         <main class="game">
@@ -60,6 +52,14 @@
                         <div class="campus-progress"><span id="campus-progress-fill"></span></div>
                         <div class="campus-next" id="campus-next"></div>
                     </div>
+                </div>
+
+                <!-- Active bonus (golden badge) countdown: a slim strip under the campus panel -->
+                <div class="buff-bar hidden" id="buff-bar">
+                    <span class="buff-icon">🌟</span>
+                    <span class="buff-text">x3.5 IQ/s + clicks</span>
+                    <span class="buff-time" id="buff-time">30s</span>
+                    <span class="buff-progress"><span id="buff-progress-fill"></span></span>
                 </div>
 
                 <button class="graduate-button hidden" id="graduate-button">🎓 GRADUATE</button>
@@ -257,7 +257,7 @@
     </div>
 
 
-    <script type="module" src="app.js?v=0d99cd84"></script>
+    <script type="module" src="app.js?v=695d4446"></script>
 </body>
 
 </html>

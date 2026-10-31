@@ -185,12 +185,14 @@ button:focus-visible,
     transform: scale(0.92);
 }
 
-/* Active bonus bar (golden badge) */
+/* Active bonus bar (golden badge): a slim strip rendered under the campus panel */
 .buff-bar {
-    grid-column: 1 / -1;
+    align-self: center;
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    width: max-content;
+    max-width: calc(100% - 1rem);
     padding: 0.3rem 0.75rem;
     border-radius: 999px;
     background: linear-gradient(90deg, #fff3b0, #ffd700);
