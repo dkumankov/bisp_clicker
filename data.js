@@ -1273,6 +1273,24 @@ export const ACHIEVEMENTS = [
         reward_value: 1.03
     },
     {
+        id: "combo_5000",
+        name: "Robot Brain",
+        description: "Reach a 5000-click combo",
+        condition: "best_combo",
+        threshold: 5000,
+        reward_type: "click_power",
+        reward_value: 1.03
+    },
+    {
+        id: "combo_20000",
+        name: "Big Bang",
+        description: "Reach a 20000-click combo",
+        condition: "best_combo",
+        threshold: 20000,
+        reward_type: "click_power",
+        reward_value: 1.05
+    },
+    {
         id: "golden_1",
         name: "Lucky Find",
         description: "Catch a Golden School Badge",
@@ -1299,11 +1317,20 @@ export const ECONOMY_CONFIG = {
 };
 
 // Auto-clickers (fingers around the Study button): every one is a real click once per second.
-// Cost of the next one = base_cost * cost_multiplier^owned.
+// Price of the next one: base_cost, then each step multiplies by a factor that itself grows
+// (x2.5, x2.75, x3, x3.25 ...), so the 10th finger costs ~67,000x the first: every finger is a choice.
+// Finger training (levels) multiplies the IQ of every finger click and is KEPT on graduation;
+// the fingers themselves are reset like any other purchase.
 export const AUTOCLICKER_CONFIG = {
     base_cost: 100000,
-    cost_multiplier: 1.5,
-    clicks_per_second: 1
+    cost_multiplier: 2.5,       // 1st -> 2nd finger
+    cost_multiplier_step: 0.25, // every next step is this much steeper
+    clicks_per_second: 1,
+    levels: [                   // index = finger level (saved as finger_level)
+        { name: "Finger", icon: "👆", mult: 1 },
+        { name: "Trained Fingers", icon: "🎓", mult: 2, cost: 5000000, requires: 4 },
+        { name: "Golden Fingers", icon: "✨", mult: 4, cost: 500000000, requires: 7 }
+    ]
 };
 
 // Prestige configuration
@@ -1318,9 +1345,11 @@ export const PRESTIGE_CONFIG = {
     bonus_certificate_every: 10  // A graduation grants 1 certificate, +1 for every N graduations already earned
 };
 
-// Click combo: tapping quickly builds a streak that multiplies click power
+// Click combo: tapping quickly builds a streak that multiplies click power.
+// Auto-clicker fingers push the streak only while the player taps too (see GameEngine.handleClick),
+// so the high tiers stay a goal for active play and are never reached idle.
 export const COMBO_CONFIG = {
-    window_ms: 1200,  // Max gap between clicks to keep the streak alive
+    window_ms: 1200,  // Max gap between the player's own clicks to keep the streak alive
     tiers: [          // Highest matching tier wins; array position + 1 = tier number (data-combo-tier)
         { min: 10, mult: 1.25, name: "Warm-up" },
         { min: 25, mult: 1.5, name: "Student" },
@@ -1331,7 +1360,19 @@ export const COMBO_CONFIG = {
         { min: 400, mult: 4.5, name: "Genius" },         // fire + ice
         { min: 500, mult: 5, name: "Prodigy" },          // black hole
         { min: 750, mult: 6, name: "Legend" },           // nuclear blast
-        { min: 1000, mult: 8, name: "Absolute Mind" }    // supernova
+        { min: 1000, mult: 8, name: "Absolute Mind" },   // supernova
+        { min: 1250, mult: 9, name: "Chalk Storm" },     // chalk dust + scribbles
+        { min: 1500, mult: 10, name: "Pop Quiz" },       // ? ! A+ pop-ups + confetti
+        { min: 2000, mult: 11, name: "Science Fair" },   // bubbles + fizz
+        { min: 2500, mult: 12, name: "Book Tornado" },   // flying pages
+        { min: 3000, mult: 13.5, name: "Math Wizard" },  // orbiting math runes
+        { min: 4000, mult: 15, name: "Rocket Lab" },     // rockets + smoke
+        { min: 5000, mult: 16.5, name: "Robot Brain" },  // circuit traces + binary rain
+        { min: 6000, mult: 18, name: "Time Machine" },   // clock rings + sand
+        { min: 7500, mult: 20, name: "Galaxy Brain" },   // planets + nebula
+        { min: 10000, mult: 22, name: "Nobel Prize" },   // gold medals rain + laurel
+        { min: 15000, mult: 25, name: "Quantum Leap" },  // teleporting entangled pairs
+        { min: 20000, mult: 30, name: "Big Bang" }       // white hole: everything at once
     ]
 };
 

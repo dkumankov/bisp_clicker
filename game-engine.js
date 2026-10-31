@@ -1,4 +1,4 @@
-import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, ACHIEVEMENTS, PRESTIGE_CONFIG, COMBO_CONFIG, GOLDEN_CONFIG, DAILY_BONUS_CONFIG, CAMPUS_STAGES, ECONOMY_CONFIG, AUTOCLICKER_CONFIG } from './data.js?v=fe356059';
+import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, ACHIEVEMENTS, PRESTIGE_CONFIG, COMBO_CONFIG, GOLDEN_CONFIG, DAILY_BONUS_CONFIG, CAMPUS_STAGES, ECONOMY_CONFIG, AUTOCLICKER_CONFIG } from './data.js?v=0193ac63';
 
 export class GameEngine {
     constructor() {
@@ -29,6 +29,8 @@ export class GameEngine {
 
         // Auto-clickers owned (saved, reset by graduation like the other purchases)
         this.autoclickers = 0;
+        // Finger training level (index into AUTOCLICKER_CONFIG.levels; saved, survives graduation)
+        this.finger_level = 0;
 
         // Prestige
         this.certificates = 0;
@@ -53,19 +55,25 @@ export class GameEngine {
         this.achievement_notifications = [];
     }
 
-    handleClick(now = performance.now()) {
+    /**
+     * One click on Study. auto = an auto-clicker finger: it pushes the streak only while the
+     * player's own streak is alive (it never starts or holds one), and its IQ gets the finger level bonus.
+     */
+    handleClick(now = performance.now(), auto = false) {
         this.clicks++;
 
-        // Extend the combo streak if the click is quick enough, otherwise restart it
-        if (this.combo > 0 && now - this.last_click_time <= this.getComboWindow()) {
+        if (auto) {
+            if (this.combo > 0 && now - this.last_click_time <= this.getComboWindow()) this.combo++;
+        } else if (this.combo > 0 && now - this.last_click_time <= this.getComboWindow()) {
+            // Extend the combo streak if the click is quick enough, otherwise restart it
             this.combo++;
         } else {
             this.combo = 1;
         }
-        this.last_click_time = now;
+        if (!auto) this.last_click_time = now;
         this.best_combo = Math.max(this.best_combo, this.combo);
 
-        const clickValue = this.calculateClickPower() * this.getComboMultiplier();
+        const clickValue = this.calculateClickPower() * this.getComboMultiplier() * (auto ? this.getFingerMultiplier() : 1);
         this.addIQ(clickValue);
         return clickValue;
     }
@@ -81,6 +89,16 @@ export class GameEngine {
     /** Tier number (0 = none, 1..N = COMBO_CONFIG.tiers position) reached by a streak length */
     getComboTier(count = this.combo) {
         return COMBO_CONFIG.tiers.filter(t => count >= t.min).length;
+    }
+
+    /** Progress of the streak towards the next tier: {next: tier config or null at the top, progress: 0..1} */
+    getComboProgress(count = this.combo) {
+        const tiers = COMBO_CONFIG.tiers;
+        const tier = this.getComboTier(count);
+        if (tier >= tiers.length) return { next: null, progress: 1 };
+        const from = tier > 0 ? tiers[tier - 1].min : 0;
+        const next = tiers[tier];
+        return { next, progress: Math.min(1, Math.max(0, (count - from) / (next.min - from))) };
     }
 
     /** Fraction (0..1) of the combo window that is still left, for the combo meter */
@@ -333,9 +351,35 @@ export class GameEngine {
         return total * this.getGlobalMultiplier(includeEvents);
     }
 
-    /** Price of the next auto-clicker: base * multiplier^owned */
-    getAutoclickerCost() {
-        return AUTOCLICKER_CONFIG.base_cost * Math.pow(AUTOCLICKER_CONFIG.cost_multiplier, this.autoclickers);
+    /** Price factor from the n-th finger to the next one: x2.5, x2.75, x3, ... */
+    getAutoclickerStep(n = this.autoclickers) {
+        return AUTOCLICKER_CONFIG.cost_multiplier + AUTOCLICKER_CONFIG.cost_multiplier_step * n;
+    }
+
+    /** Price of the next auto-clicker: base, times a factor that grows with every finger owned */
+    getAutoclickerCost(owned = this.autoclickers) {
+        let cost = AUTOCLICKER_CONFIG.base_cost;
+        for (let k = 0; k < owned; k++) cost *= this.getAutoclickerStep(k);
+        return cost;
+    }
+
+    /** IQ multiplier of every finger click (finger training level) */
+    getFingerMultiplier() {
+        const levels = AUTOCLICKER_CONFIG.levels;
+        return levels[Math.min(this.finger_level, levels.length - 1)].mult;
+    }
+
+    /** Next finger training level, or null when fully trained */
+    getNextFingerLevel() {
+        return AUTOCLICKER_CONFIG.levels[this.finger_level + 1] || null;
+    }
+
+    purchaseFingerLevel() {
+        const next = this.getNextFingerLevel();
+        if (!next || this.autoclickers < next.requires || !this.canAfford(next.cost)) return false;
+        this.iq -= next.cost;
+        this.finger_level++;
+        return true;
     }
 
     purchaseAutoclicker() {
@@ -354,7 +398,7 @@ export class GameEngine {
     /** IQ/s the auto-clickers produce right now (real clicks: click power x current combo multiplier) */
     getAutoclickIPS() {
         const cps = this.getAutoclicksPerSecond();
-        return cps > 0 ? cps * this.calculateClickPower() * this.getComboMultiplier() : 0;
+        return cps > 0 ? cps * this.calculateClickPower() * this.getComboMultiplier() * this.getFingerMultiplier() : 0;
     }
 
     /** Passive IQ/s plus auto-click income: what the HUD shows and the leaderboard receives */
@@ -499,7 +543,7 @@ export class GameEngine {
         FACILITIES.forEach(f => this.facilities[f.id] = false);
         this.upgrades = {};
         UPGRADES.forEach(u => this.upgrades[u.id] = false);
-        this.autoclickers = 0;
+        this.autoclickers = 0;  // finger_level is kept: training lasts across graduations
 
         // Keep achievements and prestige stats
         this.certificates += newCertificates;

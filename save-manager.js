@@ -1,6 +1,9 @@
+import { AUTOCLICKER_CONFIG } from './data.js?v=0193ac63';
+
 // Save format version. v1 = original format (no version field).
 // v2 only ADDS optional fields (autoclickers, best_combo, golden_clicks, leaderboard_name, last_bonus_date), so v1 saves load unchanged.
-const SAVE_VERSION = 2;
+// v3 only ADDS finger_level (missing = 0) and new achievement ids (merged over the defaults), so v1/v2 saves load unchanged.
+const SAVE_VERSION = 3;
 
 // Ignore "away" times shorter than this when showing the welcome-back screen
 const MIN_OFFLINE_SECONDS = 30;
@@ -40,6 +43,7 @@ export class SaveManager {
             certificates: gameEngine.certificates,
             graduations: gameEngine.graduations,
             autoclickers: gameEngine.autoclickers,
+            finger_level: gameEngine.finger_level,
             best_combo: gameEngine.best_combo,
             golden_clicks: gameEngine.golden_clicks,
             leaderboard_name: gameEngine.leaderboard_name,
@@ -86,6 +90,8 @@ export class SaveManager {
             gameEngine.certificates = num(saveData.certificates);
             gameEngine.graduations = num(saveData.graduations);
             gameEngine.autoclickers = Math.max(0, Math.floor(num(saveData.autoclickers)));  // Missing in older saves
+            const maxLevel = AUTOCLICKER_CONFIG.levels.length - 1;
+            gameEngine.finger_level = Math.min(maxLevel, Math.max(0, Math.floor(num(saveData.finger_level))));  // Missing before v3
             gameEngine.best_combo = num(saveData.best_combo);      // Missing in v1 saves
             gameEngine.golden_clicks = num(saveData.golden_clicks);  // Missing in v1 saves
             gameEngine.leaderboard_name = typeof saveData.leaderboard_name === 'string' ? saveData.leaderboard_name : '';  // Missing in older saves

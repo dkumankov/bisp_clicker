@@ -582,6 +582,8 @@
 
 /* Epic combo tiers on phones: tighter aura, same tap zones */
 @media (max-width: 768px) {
-    .combo:is([data-tier="5"],[data-tier="6"],[data-tier="7"],[data-tier="8"],[data-tier="9"],[data-tier="10"])::before { inset: -6px; filter: blur(7px); }
+    .combo[data-epic]::before { inset: -6px; filter: blur(7px); }
     .combo-banner { top: calc(env(safe-area-inset-top) + 20vh); }
+    .combo-next { height: 13px; }
+    .combo-next-label { font-size: 0.6rem; line-height: 13px; }
 }

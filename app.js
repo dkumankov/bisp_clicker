@@ -1,10 +1,10 @@
-import { GameEngine } from './game-engine.js?v=fc74ce48';
-import { SaveManager, MIN_OFFLINE_SECONDS } from './save-manager.js?v=0038798c';
-import { SoundManager } from './sound-manager.js?v=4109394d';
-import { ComboFx } from './combo-fx.js?v=368e8de8';
-import { AutoClickers } from './autoclickers.js?v=bd77463e';
-import { fetchLeaderboard, postScore, validateName, cleanName, timeAgo, SUBMIT_INTERVAL_MS } from './leaderboard.js?v=e4c9cefb';
-import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, COMBO_CONFIG, AUTOCLICKER_CONFIG, GOLDEN_CONFIG, CAMPUS_STAGES, MILESTONES } from './data.js?v=fe356059';
+import { GameEngine } from './game-engine.js?v=598c4ac0';
+import { SaveManager, MIN_OFFLINE_SECONDS } from './save-manager.js?v=5f0aa341';
+import { SoundManager } from './sound-manager.js?v=8666558e';
+import { ComboFx } from './combo-fx.js?v=3872703e';
+import { AutoClickers } from './autoclickers.js?v=4287a611';
+import { fetchLeaderboard, postScore, validateName, cleanName, timeAgo, SUBMIT_INTERVAL_MS } from './leaderboard.js?v=0209c219';
+import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, COMBO_CONFIG, AUTOCLICKER_CONFIG, GOLDEN_CONFIG, CAMPUS_STAGES, MILESTONES } from './data.js?v=0193ac63';
 
 // Initialize game engine, save manager, and sound manager
 const game = new GameEngine();
@@ -191,10 +191,13 @@ function handleStudyClick(x, y) {
     const value = game.handleClick();
     const comboMult = game.getComboMultiplier();
 
-    soundManager.playClick(game.combo / COMBO_CONFIG.tiers[COMBO_CONFIG.tiers.length - 1].min);
+    soundManager.playClick(game.combo / CLICK_PITCH_TOP);
     spawnClickFx(x, y, value, comboMult);
     updateStats();
 }
+
+// Click pitch climbs with the streak and tops out at this combo (Absolute Mind); higher tiers have their own fanfares
+const CLICK_PITCH_TOP = 1000;
 
 // ===== Auto-clickers =====
 const AUTO_FX_GAP_MS = 120;     // visual feedback for auto-clicks is rate-limited, the clicks themselves are not
@@ -205,13 +208,13 @@ let autoClickSeq = 0;
 
 /** One finger taps Study: a full game click (counter, combo streak, IQ), with throttled feedback */
 function handleAutoClick(angle) {
-    const value = game.handleClick();
+    const value = game.handleClick(performance.now(), true);
     autoFxValue += value;
 
     // Few fingers: every tap clicks softly. Many: every k-th tap, so it stays a rhythm and not noise
     const every = Math.max(1, Math.ceil(game.getAutoclicksPerSecond() / AUTO_SOUNDS_PER_SEC));
     if (autoClickSeq++ % every === 0) {
-        soundManager.playAutoClick(game.combo / COMBO_CONFIG.tiers[COMBO_CONFIG.tiers.length - 1].min);
+        soundManager.playAutoClick(game.combo / CLICK_PITCH_TOP);
     }
 
     const now = performance.now();
@@ -729,11 +732,14 @@ function isUpgradeAvailable(upgrade) {
 
 function renderAutoclicker() {
     const cost = game.getAutoclickerCost();
+    const step = game.getAutoclickerStep(game.autoclickers);  // the finger after this one costs that much more
+    const level = AUTOCLICKER_CONFIG.levels[game.finger_level];
+    const bonus = level.mult > 1 ? ` ${level.icon} Yours are ${level.name}: ×${level.mult} IQ per tap.` : '';
     return createBuildingCard({
         key: 'autoclicker',
         data: {
             name: '👆 Auto-Clicker',
-            description: 'A finger that really taps Study once a second: counts as a click, feeds the combo streak. Each next one costs 1.5x more.'
+            description: `A finger that taps Study once a second (a real click). It pushes your combo while YOU tap too.${bonus} Price grows fast: the one after this costs ×${step.toFixed(2).replace(/\.?0+$/, '')}.`
         },
         count: game.autoclickers,
         cost,
@@ -743,10 +749,39 @@ function renderAutoclicker() {
     });
 }
 
+/** Finger training: one card that always offers the next level (kept on graduation) */
+function renderFingerTraining() {
+    const next = game.getNextFingerLevel();
+    const current = AUTOCLICKER_CONFIG.levels[game.finger_level];
+    if (!next) {
+        return createListItem({
+            key: 'finger-level',
+            data: { name: `${current.icon} ${current.name}`, description: `Every finger tap gives ×${current.mult} IQ. Kept forever, even after graduation.` },
+            owned: true,
+            ownedLabel: 'MAX'
+        });
+    }
+    const missing = Math.max(0, next.requires - game.autoclickers);
+    return createListItem({
+        key: 'finger-level',
+        data: {
+            name: `${next.icon} ${next.name}`,
+            description: `Every finger tap gives ×${next.mult} IQ (now ×${current.mult}). Training is kept after graduation! `
+                + (missing > 0 ? `Needs ${next.requires} fingers (${missing} more).` : `Needs ${next.requires} fingers ✓`)
+        },
+        owned: false,
+        cost: next.cost,
+        locked: missing > 0,
+        label: `Train: ${game.formatNumberShort(next.cost)} IQ`,
+        buy: () => game.purchaseFingerLevel(),
+        toast: `${next.name}! ${next.icon}`
+    });
+}
+
 function renderUpgrades() {
     // Cheapest first, show ALL upgrades; locked ones (unmet prerequisite) render disabled
     const available = [...UPGRADES].sort((a, b) => a.cost - b.cost);
-    upgradesList.replaceChildren(renderAutoclicker(), ...available.map(upgrade => createListItem({
+    upgradesList.replaceChildren(renderAutoclicker(), renderFingerTraining(), ...available.map(upgrade => createListItem({
         key: `upgrade:${upgrade.id}`,
         data: upgrade,
         owned: game.upgrades[upgrade.id],
@@ -760,6 +795,14 @@ function renderUpgrades() {
 }
 
 // ===== Combo meter =====
+const comboMultEl = $('combo-mult');
+const comboNextFill = $('combo-next-fill');
+const comboNextLabel = $('combo-next-label');
+
+function setText(el, text) {
+    if (el.textContent !== text) el.textContent = text;
+}
+
 function updateCombo() {
     const combo = $('combo');
     if (!comboFx) comboFx = new ComboFx({ combo, button: studyButton, sound: soundManager, reduceMotion });
@@ -777,10 +820,18 @@ function updateCombo() {
     const mult = game.getComboMultiplier();
     const tier = game.getComboTier();
     const tierName = tier > 0 ? COMBO_CONFIG.tiers[tier - 1].name : '';
-    $('combo-mult').textContent = mult > 1 ? `🔥 ${mult}x IQ · ${tierName}` : 'keep tapping!';
+    setText(comboMultEl, mult > 1 ? `🔥 ×${mult} · ${tierName}` : 'keep tapping!');
+
+    // Progress to the next tier: bar + "next name ×mult at N"
+    const { next, progress } = game.getComboProgress();
+    comboNextFill.style.transform = `scaleX(${progress.toFixed(3)})`;
+    setText(comboNextLabel, next ? `${next.name} ×${next.mult} at ${next.min}` : '🏆 TOP TIER!');
 
     // Colour tier and a pop when a new tier is reached
     combo.dataset.tier = tier;
+    // CSS: "1" = hand-made tiers 5-10, "2" = school tiers 11+ (generic palette-driven layers)
+    if (tier >= 5) combo.dataset.epic = tier >= 11 ? '2' : '1';
+    else delete combo.dataset.epic;
     if (tier > lastComboTier && !reduceMotion) {
         combo.animate(
             [{ transform: 'scale(1)' }, { transform: 'scale(1.25)' }, { transform: 'scale(1)' }],
@@ -1360,8 +1411,9 @@ function formatDuration(seconds) {
 // ===== Game Loop =====
 function syncAutoclickers(now) {
     autoClickers.setCount(game.autoclickers);
+    autoClickers.setLevel(game.finger_level);
     autoClickers.update(now);
-    const text = game.autoclickers > 0 ? `👆 ×${game.autoclickers}` : '';
+    const text = game.autoclickers > 0 ? `${AUTOCLICKER_CONFIG.levels[game.finger_level].icon} ×${game.autoclickers}` : '';
     if (fingerCount.textContent !== text) {
         fingerCount.textContent = text;
         fingerCount.classList.toggle('hidden', !text);

@@ -49,6 +49,12 @@ export class AutoClickers {
         this.host.dataset.count = String(n);
     }
 
+    /** Finger training level (0 plain, 1 trained, 2 golden): only the look changes here, via CSS */
+    setLevel(level) {
+        const v = String(level);
+        if (this.host.dataset.level !== v) this.host.dataset.level = v;
+    }
+
     /** Number of fingers that fit: full rings only, extra fingers still click but are not drawn */
     visibleCount() {
         const rings = this.coarse ? MAX_RINGS_COARSE : MAX_RINGS_DESKTOP;

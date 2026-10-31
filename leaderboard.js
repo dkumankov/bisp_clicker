@@ -1,4 +1,4 @@
-import { LEADERBOARD_API } from './data.js?v=fe356059';
+import { LEADERBOARD_API } from './data.js?v=0193ac63';
 
 export const NAME_MAX = 24;
 export const SUBMIT_INTERVAL_MS = 31000;  // Worker allows 1 write per IP per 30 s
