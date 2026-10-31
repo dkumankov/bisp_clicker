@@ -1,10 +1,10 @@
-import { GameEngine } from './game-engine.js?v=598c4ac0';
-import { SaveManager, MIN_OFFLINE_SECONDS } from './save-manager.js?v=5f0aa341';
+import { GameEngine } from './game-engine.js?v=9f0b71ac';
+import { SaveManager, MIN_OFFLINE_SECONDS } from './save-manager.js?v=a1dec568';
 import { SoundManager } from './sound-manager.js?v=8666558e';
 import { ComboFx } from './combo-fx.js?v=3872703e';
 import { AutoClickers } from './autoclickers.js?v=4287a611';
-import { fetchLeaderboard, postScore, validateName, cleanName, timeAgo, SUBMIT_INTERVAL_MS } from './leaderboard.js?v=0209c219';
-import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, COMBO_CONFIG, AUTOCLICKER_CONFIG, GOLDEN_CONFIG, CAMPUS_STAGES, MILESTONES } from './data.js?v=0193ac63';
+import { fetchLeaderboard, postScore, validateName, cleanName, timeAgo, SUBMIT_INTERVAL_MS } from './leaderboard.js?v=2fa056b9';
+import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, COMBO_CONFIG, AUTOCLICKER_CONFIG, GOLDEN_CONFIG, CAMPUS_STAGES, MILESTONES } from './data.js?v=0cf4557e';
 
 // Initialize game engine, save manager, and sound manager
 const game = new GameEngine();
@@ -654,6 +654,16 @@ function setupPurchaseTaps() {
     });
 }
 
+/**
+ * "👶 Year 1 Student" -> icon + label spans, so phones can show a big icon above a
+ * one-line name. Names without a leading emoji get a sparkle.
+ */
+function nameMarkup(name) {
+    const [first, ...rest] = name.split(' ');
+    const hasIcon = rest.length > 0 && !/[\p{L}\p{N}]/u.test(first);
+    return `<span class="item-icon" aria-hidden="true">${hasIcon ? first : '✨'}</span> <span class="item-label">${hasIcon ? rest.join(' ') : name}</span>`;
+}
+
 function createBuildingCard({ key, data, count, cost, label, buy, toast, sound = 'purchase' }) {
     const canAfford = game.canAfford(cost);
     const card = document.createElement('div');
@@ -662,7 +672,7 @@ function createBuildingCard({ key, data, count, cost, label, buy, toast, sound =
     card.dataset.cost = cost;
     card.innerHTML = `
         <div class="building-header">
-            <div class="building-name">${data.name}</div>
+            <div class="building-name">${nameMarkup(data.name)}</div>
             <div class="building-count">${count}</div>
         </div>
         <div class="building-desc">${data.description}</div>
@@ -680,7 +690,7 @@ function createListItem({ key, data, owned, cost, label, ownedLabel, buy, toast,
     if (!owned) item.dataset.cost = cost;
     item.innerHTML = `
         <div class="list-item-info">
-            <div class="list-item-name">${data.name}${owned ? ' ✓' : ''}</div>
+            <div class="list-item-name">${nameMarkup(data.name)}${owned ? '<span class="item-check"> ✓</span>' : ''}</div>
             <div class="list-item-desc">${data.description}</div>
         </div>
         ${owned
@@ -702,7 +712,7 @@ function renderStudents() {
             data: student,
             count: game.students[student.id] || 0,
             cost,
-            label: `Buy: ${game.formatNumberShort(cost)} (+${game.formatNumberShort(production)}/s)`,
+            label: `Buy: ${game.formatNumberShort(cost)} <span class="btn-gain">(+${game.formatNumberShort(production)}/s)</span>`,
             buy: () => game.purchaseStudent(student.id),
             toast: `${student.name} joined!`
         });

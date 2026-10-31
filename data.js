@@ -6,7 +6,7 @@ export const STUDENTS = [
         base_cost: 15,
         base_production: 0.22,
         cost_multiplier: 1.18,
-        description: "A young learner just starting their journey"
+        description: "Tiny steps, steady IQ"
     },
     {
         id: "year2",
@@ -14,7 +14,7 @@ export const STUDENTS = [
         base_cost: 24,
         base_production: 0.3,
         cost_multiplier: 1.18,
-        description: "Learning to read and count"
+        description: "ABCs on autopilot"
     },
     {
         id: "year3",
@@ -22,7 +22,7 @@ export const STUDENTS = [
         base_cost: 43,
         base_production: 0.42,
         cost_multiplier: 1.18,
-        description: "Building foundational skills"
+        description: "Phonics on repeat"
     },
     {
         id: "year4",
@@ -30,7 +30,7 @@ export const STUDENTS = [
         base_cost: 86,
         base_production: 0.65,
         cost_multiplier: 1.18,
-        description: "Times tables and big ideas"
+        description: "Times tables, nonstop"
     },
     {
         id: "year5",
@@ -38,7 +38,7 @@ export const STUDENTS = [
         base_cost: 170,
         base_production: 0.97,
         cost_multiplier: 1.18,
-        description: "Curious about everything"
+        description: "Asks why. Learns more."
     },
     {
         id: "year6",
@@ -46,7 +46,7 @@ export const STUDENTS = [
         base_cost: 350,
         base_production: 1.4,
         cost_multiplier: 1.18,
-        description: "Mastering primary education"
+        description: "Primary school pro"
     },
     {
         id: "chess",
@@ -62,7 +62,7 @@ export const STUDENTS = [
         base_cost: 1400,
         base_production: 3,
         cost_multiplier: 1.18,
-        description: "Brand new at secondary school"
+        description: "New blazer, new brain"
     },
     {
         id: "year8",
@@ -70,7 +70,7 @@ export const STUDENTS = [
         base_cost: 2900,
         base_production: 4.3,
         cost_multiplier: 1.18,
-        description: "Loves science experiments"
+        description: "Lab goggles always on"
     },
     {
         id: "year9",
@@ -78,7 +78,7 @@ export const STUDENTS = [
         base_cost: 6000,
         base_production: 6,
         cost_multiplier: 1.18,
-        description: "Developing critical thinking"
+        description: "Questions everything"
     },
     {
         id: "physicist",
@@ -86,7 +86,7 @@ export const STUDENTS = [
         base_cost: 12000,
         base_production: 8.2,
         cost_multiplier: 1.18,
-        description: "Already arguing about black holes"
+        description: "Argues about black holes"
     },
     {
         id: "robotics",
@@ -94,7 +94,7 @@ export const STUDENTS = [
         base_cost: 25000,
         base_production: 11,
         cost_multiplier: 1.18,
-        description: "Builds robots from spare parts"
+        description: "Robots from spare parts"
     },
     {
         id: "year10",
@@ -102,7 +102,7 @@ export const STUDENTS = [
         base_cost: 53000,
         base_production: 15,
         cost_multiplier: 1.18,
-        description: "Choosing IGCSE subjects"
+        description: "IGCSE picks locked in"
     },
     {
         id: "year11",
@@ -110,7 +110,7 @@ export const STUDENTS = [
         base_cost: 110000,
         base_production: 20,
         cost_multiplier: 1.18,
-        description: "Preparing for IGCSE exams"
+        description: "IGCSE cram mode"
     },
     {
         id: "tutor",
@@ -118,7 +118,7 @@ export const STUDENTS = [
         base_cost: 230000,
         base_production: 27,
         cost_multiplier: 1.18,
-        description: "Gets extra lessons every weekend"
+        description: "Weekend lessons pay off"
     },
     {
         id: "olympiad",
@@ -134,7 +134,7 @@ export const STUDENTS = [
         base_cost: 1000000,
         base_production: 50,
         cost_multiplier: 1.17,
-        description: "Starting A-Level subjects"
+        description: "A-Level warm-up"
     },
     {
         id: "year13",
@@ -142,7 +142,7 @@ export const STUDENTS = [
         base_cost: 2200000,
         base_production: 67,
         cost_multiplier: 1.17,
-        description: "A-Level excellence"
+        description: "A-Level ace"
     },
     {
         id: "uni_student",
@@ -150,7 +150,7 @@ export const STUDENTS = [
         base_cost: 4700000,
         base_production: 90,
         cost_multiplier: 1.17,
-        description: "Higher education achiever"
+        description: "Lecture-hall powerhouse"
     },
     {
         id: "masters",
@@ -158,7 +158,7 @@ export const STUDENTS = [
         base_cost: 10000000,
         base_production: 120,
         cost_multiplier: 1.17,
-        description: "Advanced research specialist"
+        description: "Deep-dive researcher"
     },
     {
         id: "phd",
@@ -166,7 +166,7 @@ export const STUDENTS = [
         base_cost: 22000000,
         base_production: 160,
         cost_multiplier: 1.17,
-        description: "Pushing boundaries of knowledge"
+        description: "Thesis-powered genius"
     },
     {
         id: "professor",
@@ -174,7 +174,7 @@ export const STUDENTS = [
         base_cost: 48000000,
         base_production: 220,
         cost_multiplier: 1.17,
-        description: "World-class academic leader"
+        description: "Writes the textbooks"
     },
     {
         id: "alumnus",
@@ -183,7 +183,7 @@ export const STUDENTS = [
         base_production: 300,
         cost_multiplier: 1.15,
         legendary: true,
-        description: "Legendary: Comes back from the future. Production +25% per graduation",
+        description: "Legendary: +25% per graduation",
         prestige_scale: 0.25
     },
     {
@@ -193,7 +193,7 @@ export const STUDENTS = [
         base_production: 400,
         cost_multiplier: 1.15,
         legendary: true,
-        description: "Legendary: Production doubles for every 25 twins owned",
+        description: "Legendary: ×2 per 25 owned",
         milestone_every: 25,
         milestone_mult: 2
     },
@@ -204,7 +204,7 @@ export const STUDENTS = [
         base_production: 550,
         cost_multiplier: 1.15,
         legendary: true,
-        description: "Legendary: Production +0.5% for every student you own",
+        description: "Legendary: +0.5% per student",
         crowd_scale: 0.005
     }
 ];
@@ -220,7 +220,7 @@ export const TEACHERS = [
         cost_multiplier: 1.25,
         targets: ["year1", "year2", "year3"],
         bonus_per_unit: 0.05,
-        description: "+5% to Year 1 Student, Year 2 Student, Year 3 Student each"
+        description: "+5% to Years 1–3"
     },
     {
         id: "class_teacher",
@@ -230,7 +230,7 @@ export const TEACHERS = [
         cost_multiplier: 1.25,
         targets: ["year4", "year5"],
         bonus_per_unit: 0.05,
-        description: "+5% to Year 4 Student, Year 5 Student each"
+        description: "+5% to Years 4–5"
     },
     {
         id: "subject_teacher",
@@ -240,7 +240,7 @@ export const TEACHERS = [
         cost_multiplier: 1.25,
         targets: ["year6", "year7", "year8"],
         bonus_per_unit: 0.05,
-        description: "+5% to Year 6 Student, Year 7 Student, Year 8 Student each"
+        description: "+5% to Years 6–8"
     },
     {
         id: "chess_coach",
@@ -250,7 +250,7 @@ export const TEACHERS = [
         cost_multiplier: 1.25,
         targets: ["chess"],
         bonus_per_unit: 0.06,
-        description: "+6% to Chess Club Kid each"
+        description: "+6% to Chess Kids"
     },
     {
         id: "form_tutor",
@@ -260,7 +260,7 @@ export const TEACHERS = [
         cost_multiplier: 1.25,
         targets: ["year9", "year10"],
         bonus_per_unit: 0.04,
-        description: "+4% to Year 9 Student, Year 10 Student each"
+        description: "+4% to Years 9–10"
     },
     {
         id: "science_teacher",
@@ -270,7 +270,7 @@ export const TEACHERS = [
         cost_multiplier: 1.25,
         targets: ["physicist", "year9"],
         bonus_per_unit: 0.05,
-        description: "+5% to Young Physicist, Year 9 Student each"
+        description: "+5% to Physicists, Y9"
     },
     {
         id: "robotics_mentor",
@@ -280,7 +280,7 @@ export const TEACHERS = [
         cost_multiplier: 1.25,
         targets: ["robotics"],
         bonus_per_unit: 0.05,
-        description: "+5% to Robotics Whiz each"
+        description: "+5% to Robotics Whiz"
     },
     {
         id: "head_dept",
@@ -290,7 +290,7 @@ export const TEACHERS = [
         cost_multiplier: 1.25,
         targets: ["year11", "year12"],
         bonus_per_unit: 0.03,
-        description: "+3% to Year 11 Student, Year 12 Student each"
+        description: "+3% to Years 11–12"
     },
     {
         id: "olympiad_coach",
@@ -300,7 +300,7 @@ export const TEACHERS = [
         cost_multiplier: 1.25,
         targets: ["olympiad", "tutor"],
         bonus_per_unit: 0.04,
-        description: "+4% to Olympiad Champion, Private Tutor Pupil each"
+        description: "+4% to Olympiad, Tutor"
     },
     {
         id: "sixth_form_head",
@@ -310,7 +310,7 @@ export const TEACHERS = [
         cost_multiplier: 1.25,
         targets: ["year13", "year12"],
         bonus_per_unit: 0.03,
-        description: "+3% to Year 13 Student, Year 12 Student each"
+        description: "+3% to Years 12–13"
     },
     {
         id: "principal",
@@ -320,7 +320,7 @@ export const TEACHERS = [
         cost_multiplier: 1.25,
         targets: ["uni_student"],
         bonus_per_unit: 0.03,
-        description: "+3% to University Student each"
+        description: "+3% to Uni Students"
     },
     {
         id: "consultant",
@@ -330,7 +330,7 @@ export const TEACHERS = [
         cost_multiplier: 1.25,
         targets: ["masters"],
         bonus_per_unit: 0.03,
-        description: "+3% to Masters Student each"
+        description: "+3% to Masters"
     },
     {
         id: "dean",
@@ -340,7 +340,7 @@ export const TEACHERS = [
         cost_multiplier: 1.25,
         targets: ["phd"],
         bonus_per_unit: 0.025,
-        description: "+2.5% to PhD Candidate each"
+        description: "+2.5% to PhDs"
     },
     {
         id: "chancellor",
@@ -350,7 +350,7 @@ export const TEACHERS = [
         cost_multiplier: 1.25,
         targets: ["professor"],
         bonus_per_unit: 0.02,
-        description: "+2% to Professor each"
+        description: "+2% to Professors"
     },
     {
         id: "exam_board",
@@ -360,7 +360,7 @@ export const TEACHERS = [
         cost_multiplier: 1.25,
         targets: ["year11", "year13", "olympiad"],
         bonus_per_unit: 0.02,
-        description: "+2% to Year 11 Student, Year 13 Student, Olympiad Champion each"
+        description: "+2% to Y11, Y13, Olympiad"
     },
     {
         id: "curriculum_lead",
@@ -370,7 +370,7 @@ export const TEACHERS = [
         cost_multiplier: 1.25,
         targets: ["year2", "year4", "year6", "year8", "year10", "year12"],
         bonus_per_unit: 0.015,
-        description: "+1.5% to 6 student types each"
+        description: "+1.5% to 6 student types"
     },
     {
         id: "master_edu",
@@ -382,7 +382,7 @@ export const TEACHERS = [
         targets: ["year1", "year2", "year3", "year4", "year5", "year6", "chess", "year7", "year8", "year9", "physicist", "robotics", "year10", "year11", "tutor", "olympiad", "year12", "year13", "uni_student", "masters", "phd", "professor", "alumnus", "twins", "council"],
         bonus_per_unit: 0.012,
         cap_exempt: true,
-        description: "Legendary: Boosts EVERY student type. +1.2% each, beyond the teacher cap"
+        description: "Legendary: +1.2% all, uncapped"
     },
     {
         id: "laureate",
@@ -394,7 +394,7 @@ export const TEACHERS = [
         targets: ["tutor", "olympiad", "year12", "year13", "uni_student", "masters", "phd", "professor"],
         bonus_per_unit: 0.04,
         cap_exempt: true,
-        description: "Legendary: Boosts the eight most advanced students. +4% each, beyond the teacher cap"
+        description: "Legendary: +4% top 8, uncapped"
     },
     {
         id: "dream_team",
@@ -407,7 +407,7 @@ export const TEACHERS = [
         bonus_per_unit: 0.02,
         prestige_scale: 0.1,
         cap_exempt: true,
-        description: "Legendary: Bonus grows +10% for every graduation. +2% each, beyond the teacher cap"
+        description: "Legendary: +2%, +10%/grad, uncapped"
     },
     {
         id: "headmaster",
@@ -419,7 +419,7 @@ export const TEACHERS = [
         targets: ["chess", "year7", "year8", "year9", "physicist", "robotics", "year10", "year11", "tutor", "olympiad", "year12", "year13", "uni_student", "masters", "phd", "professor"],
         bonus_per_unit: 0.03,
         cap_exempt: true,
-        description: "Legendary: Boosts sixteen student types at once. +3% each, beyond the teacher cap"
+        description: "Legendary: +3% to 16, uncapped"
     }
 ];
 
@@ -429,7 +429,7 @@ export const FACILITIES = [
     {
         id: "refectory",
         name: "🍽️ Refectory",
-        description: "Healthy food for growing minds. +5% Global IQ",
+        description: "Brain food · +5% IQ",
         cost: 2000,
         effect_type: "global_multiplier",
         effect_value: 1.05
@@ -437,7 +437,7 @@ export const FACILITIES = [
     {
         id: "mtb_library",
         name: "📚 MTB Library",
-        description: "Quiet study corner: faster notes. +6% Click Power",
+        description: "Quiet notes · +6% clicks",
         cost: 4200,
         effect_type: "click_power",
         effect_value: 1.06
@@ -445,7 +445,7 @@ export const FACILITIES = [
     {
         id: "playground",
         name: "🛝 Playground",
-        description: "Break time recharges everyone. +7% Global IQ",
+        description: "Recess recharge · +7% IQ",
         cost: 8800,
         effect_type: "global_multiplier",
         effect_value: 1.07
@@ -453,7 +453,7 @@ export const FACILITIES = [
     {
         id: "sports_hall",
         name: "🏀 Sports Hall",
-        description: "Teamwork makes every tap stronger. +8% Click Power",
+        description: "Team taps · +8% clicks",
         cost: 19000,
         effect_type: "click_power",
         effect_value: 1.08
@@ -461,7 +461,7 @@ export const FACILITIES = [
     {
         id: "it_suite",
         name: "💻 IT Suite",
-        description: "Computers in every classroom. +9% Global IQ",
+        description: "PCs everywhere · +9% IQ",
         cost: 39000,
         effect_type: "global_multiplier",
         effect_value: 1.09
@@ -469,7 +469,7 @@ export const FACILITIES = [
     {
         id: "bakery",
         name: "🥐 School Bakery",
-        description: "Fresh croissants fuel fast tapping. +10% Click Power",
+        description: "Croissant fuel · +10% clicks",
         cost: 82000,
         effect_type: "click_power",
         effect_value: 1.1
@@ -477,7 +477,7 @@ export const FACILITIES = [
     {
         id: "music_room",
         name: "🎵 Music Room",
-        description: "Harmony across the whole school. +11% Global IQ",
+        description: "In harmony · +11% IQ",
         cost: 170000,
         effect_type: "global_multiplier",
         effect_value: 1.11
@@ -485,7 +485,7 @@ export const FACILITIES = [
     {
         id: "olympic_pool",
         name: "🏊 Olympic Pool",
-        description: "Swimming sharpens focus on every tap. +12% Click Power",
+        description: "Laser focus · +12% clicks",
         cost: 360000,
         effect_type: "click_power",
         effect_value: 1.12
@@ -493,7 +493,7 @@ export const FACILITIES = [
     {
         id: "stem_lab",
         name: "🔬 STEM Lab",
-        description: "Science & Technology labs. +13% Global IQ",
+        description: "Lab magic · +13% IQ",
         cost: 760000,
         effect_type: "global_multiplier",
         effect_value: 1.13
@@ -501,7 +501,7 @@ export const FACILITIES = [
     {
         id: "art_studio",
         name: "🎨 Art Studio",
-        description: "Creative hands, quicker clicks. +14% Click Power",
+        description: "Quick hands · +14% clicks",
         cost: 1600000,
         effect_type: "click_power",
         effect_value: 1.14
@@ -509,7 +509,7 @@ export const FACILITIES = [
     {
         id: "fitness_gym",
         name: "🏋️ Fitness Gym",
-        description: "Strong body, strong mind. +15% Global IQ",
+        description: "Fit minds · +15% IQ",
         cost: 3300000,
         effect_type: "global_multiplier",
         effect_value: 1.15
@@ -517,7 +517,7 @@ export const FACILITIES = [
     {
         id: "auditorium",
         name: "🎭 Auditorium",
-        description: "300-seat venue: confidence for every tap. +16% Click Power",
+        description: "Stage nerve · +16% clicks",
         cost: 7000000,
         effect_type: "click_power",
         effect_value: 1.16
@@ -525,7 +525,7 @@ export const FACILITIES = [
     {
         id: "tennis_courts",
         name: "🎾 Tennis Courts",
-        description: "Friendly competition for all. +17% Global IQ",
+        description: "Friendly rivals · +17% IQ",
         cost: 15000000,
         effect_type: "global_multiplier",
         effect_value: 1.17
@@ -533,7 +533,7 @@ export const FACILITIES = [
     {
         id: "observatory",
         name: "🔭 Observatory",
-        description: "Stargazing inspires sharper tapping. +18% Click Power",
+        description: "Star-sharp · +18% clicks",
         cost: 31000000,
         effect_type: "click_power",
         effect_value: 1.18
@@ -541,7 +541,7 @@ export const FACILITIES = [
     {
         id: "boarding_house",
         name: "🏠 Boarding House",
-        description: "Home away from home. +19% Global IQ",
+        description: "Home from home · +19% IQ",
         cost: 65000000,
         effect_type: "global_multiplier",
         effect_value: 1.19
@@ -549,7 +549,7 @@ export const FACILITIES = [
     {
         id: "robotics_lab",
         name: "🤖 Robotics Lab",
-        description: "Robot helpers press the button. +20% Click Power",
+        description: "Robot helpers · +20% clicks",
         cost: 140000000,
         effect_type: "click_power",
         effect_value: 1.2
@@ -557,7 +557,7 @@ export const FACILITIES = [
     {
         id: "aerial_arts",
         name: "🎪 Aerial Arts Academy",
-        description: "Trapeze and circus skills for the whole school. +21% Global IQ",
+        description: "Circus skills · +21% IQ",
         cost: 290000000,
         effect_type: "global_multiplier",
         effect_value: 1.21
@@ -565,7 +565,7 @@ export const FACILITIES = [
     {
         id: "eco_garden",
         name: "🌱 Eco Garden",
-        description: "Fresh air and fast fingers. +22% Click Power",
+        description: "Fresh air · +22% clicks",
         cost: 600000000,
         effect_type: "click_power",
         effect_value: 1.22
@@ -573,7 +573,7 @@ export const FACILITIES = [
     {
         id: "wellbeing_centre",
         name: "🧘 Wellbeing Centre",
-        description: "Support and counselling for all. +23% Global IQ",
+        description: "Calm minds · +23% IQ",
         cost: 1300000000,
         effect_type: "global_multiplier",
         effect_value: 1.23
@@ -581,7 +581,7 @@ export const FACILITIES = [
     {
         id: "recording_studio",
         name: "🎙️ Recording Studio",
-        description: "Podcast skills, powerful taps. +24% Click Power",
+        description: "Podcast power · +24% clicks",
         cost: 2600000000,
         effect_type: "click_power",
         effect_value: 1.24
@@ -589,7 +589,7 @@ export const FACILITIES = [
     {
         id: "football_pitch",
         name: "⚽ Football Pitch",
-        description: "The whole school cheers together. +25% Global IQ",
+        description: "Whole-school cheer · +25% IQ",
         cost: 5600000000,
         effect_type: "global_multiplier",
         effect_value: 1.25
@@ -597,7 +597,7 @@ export const FACILITIES = [
     {
         id: "starfall",
         name: "🌠 Starfall Observatory",
-        description: "Legendary: A Golden Badge appears at least every 100 seconds",
+        description: "Legendary: Golden Badge every ≤100s",
         cost: 14000000000,
         effect_type: "golden_guarantee",
         effect_value: 100,
@@ -606,7 +606,7 @@ export const FACILITIES = [
     {
         id: "alumni_hall",
         name: "🏆 Alumni Hall of Fame",
-        description: "Legendary: +1 extra certificate on every graduation",
+        description: "Legendary: +1 certificate per graduation",
         cost: 35000000000,
         effect_type: "certificate_bonus",
         effect_value: 1,
@@ -615,7 +615,7 @@ export const FACILITIES = [
     {
         id: "cheer_arena",
         name: "📣 Grand Cheer Arena",
-        description: "Legendary: Combo window is 1.5x longer",
+        description: "Legendary: combo window ×1.5",
         cost: 88000000000,
         effect_type: "combo_extend",
         effect_value: 1.5,
@@ -624,7 +624,7 @@ export const FACILITIES = [
     {
         id: "time_vault",
         name: "⏳ Time Capsule Vault",
-        description: "Legendary: Every click also gives 1% of your IQ/s",
+        description: "Legendary: clicks add 1% of IQ/s",
         cost: 220000000000,
         effect_type: "click_ips_share",
         effect_value: 0.01,
@@ -640,7 +640,7 @@ export const UPGRADES = [
         cost: 150,
         type: "click_power",
         value: 2,
-        description: "Double click power",
+        description: "Sharp tip · clicks ×2",
         requires: null
     },
     {
@@ -649,7 +649,7 @@ export const UPGRADES = [
         cost: 600,
         type: "click_power",
         value: 2,
-        description: "2x click power",
+        description: "Comfy taps · clicks ×2",
         requires: "click1"
     },
     {
@@ -658,7 +658,7 @@ export const UPGRADES = [
         cost: 2400,
         type: "click_power",
         value: 2,
-        description: "2x click power",
+        description: "Lo-fi beats · clicks ×2",
         requires: "click2"
     },
     {
@@ -667,7 +667,7 @@ export const UPGRADES = [
         cost: 9600,
         type: "click_power",
         value: 2,
-        description: "2x click power",
+        description: "Calm focus · clicks ×2",
         requires: "click3"
     },
     {
@@ -676,7 +676,7 @@ export const UPGRADES = [
         cost: 38000,
         type: "click_power",
         value: 2,
-        description: "2x click power",
+        description: "Skim fast · clicks ×2",
         requires: "click4"
     },
     {
@@ -685,7 +685,7 @@ export const UPGRADES = [
         cost: 150000,
         type: "click_power",
         value: 2,
-        description: "2x click power",
+        description: "Recall all · clicks ×2",
         requires: "click5"
     },
     {
@@ -694,7 +694,7 @@ export const UPGRADES = [
         cost: 600000,
         type: "click_power",
         value: 2,
-        description: "2x click power",
+        description: "Turbo notes · clicks ×2",
         requires: "click6"
     },
     {
@@ -703,7 +703,7 @@ export const UPGRADES = [
         cost: 2400000,
         type: "click_power",
         value: 2,
-        description: "2x click power",
+        description: "Blink-fast · clicks ×2",
         requires: "click7"
     },
     {
@@ -712,7 +712,7 @@ export const UPGRADES = [
         cost: 9800000,
         type: "click_power",
         value: 2,
-        description: "2x click power",
+        description: "AI on your side · clicks ×2",
         requires: "click8"
     },
     {
@@ -721,7 +721,7 @@ export const UPGRADES = [
         cost: 39000000,
         type: "click_power",
         value: 1.5,
-        description: "1.5x click power",
+        description: "Snapshot memory · clicks ×1.5",
         requires: "click9"
     },
     {
@@ -730,7 +730,7 @@ export const UPGRADES = [
         cost: 150000000,
         type: "click_power",
         value: 1.5,
-        description: "1.5x click power",
+        description: "Liftoff · clicks ×1.5",
         requires: "click10"
     },
     {
@@ -739,7 +739,7 @@ export const UPGRADES = [
         cost: 630000000,
         type: "click_power",
         value: 1.5,
-        description: "1.5x click power",
+        description: "Big brain · clicks ×1.5",
         requires: "click11"
     },
     {
@@ -748,7 +748,7 @@ export const UPGRADES = [
         cost: 36000,
         type: "per_student_click",
         value: 0.1,
-        description: "+0.1 IQ per click for every student you own",
+        description: "+0.1 per click per student",
         requires: "click2"
     },
     {
@@ -757,7 +757,7 @@ export const UPGRADES = [
         cost: 10000000,
         type: "per_student_click",
         value: 0.3,
-        description: "+0.3 IQ per click for every student you own",
+        description: "+0.3 per click per student",
         requires: "ps_click1"
     },
     {
@@ -766,7 +766,7 @@ export const UPGRADES = [
         cost: 3800000000,
         type: "per_student_click",
         value: 1,
-        description: "+1 IQ per click for every student you own",
+        description: "+1 per click per student",
         requires: "ps_click2"
     },
     {
@@ -776,7 +776,7 @@ export const UPGRADES = [
         type: "student_multiplier",
         value: 1.5,
         target: ["year1", "year2", "year3", "year4", "year5"],
-        description: "1.5x for early students",
+        description: "Early students ×1.5",
         requires: null
     },
     {
@@ -786,7 +786,7 @@ export const UPGRADES = [
         type: "student_multiplier",
         value: 2,
         target: ["year1", "year2", "year3", "year4", "year5"],
-        description: "2x for early students",
+        description: "Early students ×2",
         requires: "student_eff1"
     },
     {
@@ -796,7 +796,7 @@ export const UPGRADES = [
         type: "student_multiplier",
         value: 2,
         target: ["year1", "year2", "year3", "year4", "year5"],
-        description: "2x for early students",
+        description: "Early students ×2",
         requires: "student_early2"
     },
     {
@@ -806,7 +806,7 @@ export const UPGRADES = [
         type: "student_multiplier",
         value: 2.5,
         target: ["year1", "year2", "year3", "year4", "year5"],
-        description: "2.5x for early students",
+        description: "Early students ×2.5",
         requires: "student_early3"
     },
     {
@@ -816,7 +816,7 @@ export const UPGRADES = [
         type: "student_multiplier",
         value: 1.5,
         target: ["year6", "chess", "year7", "year8", "year9"],
-        description: "1.5x for middle students",
+        description: "Middle students ×1.5",
         requires: null
     },
     {
@@ -826,7 +826,7 @@ export const UPGRADES = [
         type: "student_multiplier",
         value: 2,
         target: ["year6", "chess", "year7", "year8", "year9"],
-        description: "2x for middle students",
+        description: "Middle students ×2",
         requires: "student_eff2"
     },
     {
@@ -836,7 +836,7 @@ export const UPGRADES = [
         type: "student_multiplier",
         value: 2,
         target: ["year6", "chess", "year7", "year8", "year9"],
-        description: "2x for middle students",
+        description: "Middle students ×2",
         requires: "student_mid2"
     },
     {
@@ -846,7 +846,7 @@ export const UPGRADES = [
         type: "student_multiplier",
         value: 2.5,
         target: ["year6", "chess", "year7", "year8", "year9"],
-        description: "2.5x for middle students",
+        description: "Middle students ×2.5",
         requires: "student_mid3"
     },
     {
@@ -856,7 +856,7 @@ export const UPGRADES = [
         type: "student_multiplier",
         value: 1.5,
         target: ["physicist", "robotics", "year10", "year11", "tutor", "olympiad", "year12", "year13"],
-        description: "1.5x for senior students",
+        description: "Senior students ×1.5",
         requires: null
     },
     {
@@ -866,7 +866,7 @@ export const UPGRADES = [
         type: "student_multiplier",
         value: 2,
         target: ["physicist", "robotics", "year10", "year11", "tutor", "olympiad", "year12", "year13"],
-        description: "2x for senior students",
+        description: "Senior students ×2",
         requires: "student_eff3"
     },
     {
@@ -876,7 +876,7 @@ export const UPGRADES = [
         type: "student_multiplier",
         value: 2,
         target: ["physicist", "robotics", "year10", "year11", "tutor", "olympiad", "year12", "year13"],
-        description: "2x for senior students",
+        description: "Senior students ×2",
         requires: "student_senior2"
     },
     {
@@ -886,7 +886,7 @@ export const UPGRADES = [
         type: "student_multiplier",
         value: 2.5,
         target: ["physicist", "robotics", "year10", "year11", "tutor", "olympiad", "year12", "year13"],
-        description: "2.5x for senior students",
+        description: "Senior students ×2.5",
         requires: "student_senior3"
     },
     {
@@ -896,7 +896,7 @@ export const UPGRADES = [
         type: "student_multiplier",
         value: 1.5,
         target: ["uni_student", "masters", "phd", "professor"],
-        description: "1.5x for university students",
+        description: "Uni students ×1.5",
         requires: null
     },
     {
@@ -906,7 +906,7 @@ export const UPGRADES = [
         type: "student_multiplier",
         value: 2,
         target: ["uni_student", "masters", "phd", "professor"],
-        description: "2x for university students",
+        description: "Uni students ×2",
         requires: "uni_eff1"
     },
     {
@@ -916,7 +916,7 @@ export const UPGRADES = [
         type: "student_multiplier",
         value: 2,
         target: ["uni_student", "masters", "phd", "professor"],
-        description: "2x for university students",
+        description: "Uni students ×2",
         requires: "uni_eff2"
     },
     {
@@ -926,7 +926,7 @@ export const UPGRADES = [
         type: "student_multiplier",
         value: 2,
         target: ["year9"],
-        description: "2x for Year 9 students",
+        description: "Year 9 ×2",
         requires: "stem_lab"
     },
     {
@@ -936,7 +936,7 @@ export const UPGRADES = [
         type: "student_multiplier",
         value: 2,
         target: ["year11"],
-        description: "2x for Year 11 students",
+        description: "Year 11 ×2",
         requires: "stem_lab"
     },
     {
@@ -946,7 +946,7 @@ export const UPGRADES = [
         type: "student_multiplier",
         value: 2,
         target: ["year6"],
-        description: "2x for Year 6 students",
+        description: "Year 6 ×2",
         requires: "mtb_library"
     },
     {
@@ -956,7 +956,7 @@ export const UPGRADES = [
         type: "student_multiplier",
         value: 2,
         target: ["year13"],
-        description: "2x for Year 13 students",
+        description: "Year 13 ×2",
         requires: "auditorium"
     },
     {
@@ -966,7 +966,7 @@ export const UPGRADES = [
         type: "student_multiplier",
         value: 2,
         target: ["physicist"],
-        description: "2x for Young Physicists",
+        description: "Young Physicists ×2",
         requires: "science1"
     },
     {
@@ -976,7 +976,7 @@ export const UPGRADES = [
         type: "student_multiplier",
         value: 2,
         target: ["chess"],
-        description: "2x for Chess Club Kids",
+        description: "Chess Kids ×2",
         requires: "student_eff2"
     },
     {
@@ -986,7 +986,7 @@ export const UPGRADES = [
         type: "student_multiplier",
         value: 2,
         target: ["robotics"],
-        description: "2x for Robotics Whizzes",
+        description: "Robotics Whizzes ×2",
         requires: "robotics_lab"
     },
     {
@@ -996,7 +996,7 @@ export const UPGRADES = [
         type: "student_multiplier",
         value: 2,
         target: ["olympiad", "tutor"],
-        description: "2x for Olympiad Champions and Tutor Pupils",
+        description: "Olympiad & Tutor kids ×2",
         requires: "student_senior2"
     },
     {
@@ -1005,7 +1005,7 @@ export const UPGRADES = [
         cost: 28000,
         type: "global_multiplier",
         value: 1.1,
-        description: "+10% to all IQ generation",
+        description: "All IQ +10%",
         requires: null
     },
     {
@@ -1014,7 +1014,7 @@ export const UPGRADES = [
         cost: 780000,
         type: "global_multiplier",
         value: 1.15,
-        description: "+15% to all IQ generation",
+        description: "All IQ +15%",
         requires: "global1"
     },
     {
@@ -1023,7 +1023,7 @@ export const UPGRADES = [
         cost: 22000000,
         type: "global_multiplier",
         value: 1.3,
-        description: "+30% to all IQ generation",
+        description: "All IQ +30%",
         requires: "global2"
     },
     {
@@ -1032,7 +1032,7 @@ export const UPGRADES = [
         cost: 210000,
         type: "global_multiplier",
         value: 1.1,
-        description: "+10% to all IQ generation",
+        description: "All IQ +10%",
         requires: "global1"
     },
     {
@@ -1041,7 +1041,7 @@ export const UPGRADES = [
         cost: 620000000,
         type: "global_multiplier",
         value: 1.2,
-        description: "+20% to all IQ generation",
+        description: "All IQ +20%",
         requires: "global3"
     },
     {
@@ -1050,7 +1050,7 @@ export const UPGRADES = [
         cost: 13000000000,
         type: "global_multiplier",
         value: 1.3,
-        description: "+30% to all IQ generation",
+        description: "All IQ +30%",
         requires: "global5"
     },
     {
@@ -1059,7 +1059,7 @@ export const UPGRADES = [
         cost: 75000000000,
         type: "global_multiplier",
         value: 1.5,
-        description: "+50% to all IQ generation",
+        description: "All IQ +50%",
         requires: "global6"
     },
     {
@@ -1068,7 +1068,7 @@ export const UPGRADES = [
         cost: 4200000,
         type: "global_multiplier",
         value: 1.1,
-        description: "+10% to all IQ generation",
+        description: "All IQ +10%",
         requires: "it_suite"
     },
     {
@@ -1077,7 +1077,7 @@ export const UPGRADES = [
         cost: 210000000,
         type: "global_multiplier",
         value: 1.15,
-        description: "+15% to all IQ generation",
+        description: "All IQ +15%",
         requires: "global8"
     },
     {
@@ -1087,7 +1087,7 @@ export const UPGRADES = [
         type: "prestige_synergy",
         value: 0.04,
         per: "graduation",
-        description: "+4% IQ per graduation you have earned",
+        description: "+4% IQ per graduation",
         requires: "global1"
     },
     {
@@ -1097,7 +1097,7 @@ export const UPGRADES = [
         type: "prestige_synergy",
         value: 0.02,
         per: "certificate",
-        description: "+2% IQ per certificate you own",
+        description: "+2% IQ per certificate",
         requires: "alumni_donations"
     },
     {
@@ -1108,7 +1108,7 @@ export const UPGRADES = [
         value: 1.12,
         cap: 10,
         legendary: true,
-        description: "Legendary: x1.12 IQ for every graduation (up to 10)",
+        description: "Legendary: ×1.12 IQ per grad (max 10)",
         requires: "global6"
     },
     {
@@ -1118,7 +1118,7 @@ export const UPGRADES = [
         type: "golden_duration",
         value: 2,
         legendary: true,
-        description: "Legendary: Golden Badge bonus lasts twice as long",
+        description: "Legendary: Golden Badge lasts 2×",
         requires: "global6"
     },
     {
@@ -1128,7 +1128,7 @@ export const UPGRADES = [
         type: "per_student_click",
         value: 3,
         legendary: true,
-        description: "Legendary: +3 IQ per click for every student you own",
+        description: "Legendary: +3 per click per student",
         requires: "ps_click3"
     },
     {
@@ -1139,7 +1139,7 @@ export const UPGRADES = [
         value: 0.06,
         per: "certificate",
         legendary: true,
-        description: "Legendary: +6% IQ per certificate you own",
+        description: "Legendary: +6% IQ per certificate",
         requires: "cert_frames"
     }
 ];

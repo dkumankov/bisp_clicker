@@ -1,4 +1,4 @@
-import { AUTOCLICKER_CONFIG } from './data.js?v=0193ac63';
+import { AUTOCLICKER_CONFIG } from './data.js?v=0cf4557e';
 
 // Save format version. v1 = original format (no version field).
 // v2 only ADDS optional fields (autoclickers, best_combo, golden_clicks, leaderboard_name, last_bonus_date), so v1 saves load unchanged.
