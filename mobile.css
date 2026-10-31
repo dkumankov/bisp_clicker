@@ -11,8 +11,10 @@
         --tabbar-h: 60px;
         --handle-h: 24px;
         --sheet-closed-h: calc(var(--tabbar-h) + var(--handle-h) + env(safe-area-inset-bottom));
-        /* Reserved slot for the docked combo panel (count row + meter + next-tier bar) */
+        /* Reserved slot for the docked combo panel (visible height, see the combo block below) */
         --combo-slot-h: 84px;
+        /* How far the panel tucks under the sheet's rounded top edge */
+        --combo-tuck: 20px;
     }
 
     /* The page itself never scrolls: HUD on top, play field fills the rest */
@@ -154,33 +156,7 @@
     .study-gain b[data-len="l"] { font-size: clamp(1.6rem, 7.5vw, 2rem); }
     .study-gain b[data-len="xl"] { font-size: clamp(1.3rem, 6vw, 1.6rem); }
 
-    /* Combo docks just above the closed bottom sheet, out of the document flow, so
-       showing or hiding it never moves the Study button. Its space is reserved in
-       .play padding-bottom. The slide uses `translate` (not `transform`) so it
-       composes with the tier animations and the tier-up pop, which own `transform`. */
-    .combo {
-        position: fixed;
-        left: 0;
-        right: 0;
-        bottom: calc(var(--sheet-closed-h) + 8px);
-        z-index: 70;
-        margin-inline: auto;
-        min-width: 0;
-        width: min(calc(100% - 1.5rem), 240px);
-        touch-action: none;
-        translate: 0 0;
-        opacity: 1;
-        transition: opacity 0.18s ease-out, translate 0.18s ease-out, visibility 0s;
-    }
-
-    .combo.hidden {
-        display: flex !important;
-        visibility: hidden;
-        opacity: 0;
-        translate: 0 14px;
-        pointer-events: none;
-        transition: opacity 0.25s ease-in, translate 0.25s ease-in, visibility 0s 0.25s;
-    }
+    /* The docked combo panel lives in its own block further down (after the shared phone combo rules) */
 
     .credits {
         display: none;
@@ -623,6 +599,185 @@
     .combo-banner { top: calc(env(safe-area-inset-top) + 20vh); }
     .combo-next { height: 13px; }
     .combo-next-label { font-size: 0.6rem; line-height: 13px; }
+}
+
+/* ----- Portrait phones: combo panel docked edge to edge above the bottom sheet -----
+   Out of the document flow (fixed), so showing or hiding it never moves the Study button:
+   its space is reserved in .play padding-bottom (--combo-slot-h). The panel tucks
+   --combo-tuck under the sheet, whose rounded top edge and shadow are the divider.
+   Hierarchy: streak timer as a rim on the top edge, then "x15" + "🔥 ×1.25 · Warm-up",
+   then the next-tier hint, then a clean progress track (label never sits on the bar).
+   Tier palette, epic layers (.combo-fx, ::before) and combo-fx.js particles keep working:
+   only geometry changes here. The slide uses `translate` (not `transform`) so it composes
+   with the tier animations and pops, which own `transform`. */
+@media (max-width: 768px) and (orientation: portrait) {
+    .combo {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: calc(var(--sheet-closed-h) - var(--combo-tuck));
+        z-index: 70;
+        box-sizing: border-box;
+        width: auto;
+        height: calc(var(--combo-slot-h) + var(--combo-tuck));
+        min-width: 0;
+        margin: 0;
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        grid-template-areas:
+            "count mult"
+            "next  next";
+        align-content: center;
+        align-items: baseline;
+        gap: 0.4rem 0.7rem;
+        padding: 0.6rem max(1.1rem, env(safe-area-inset-right)) calc(var(--combo-tuck) + 0.4rem) max(1.1rem, env(safe-area-inset-left));
+        border-radius: 20px 20px 0 0;
+        background: linear-gradient(180deg, rgba(20, 16, 52, 0.9), rgba(32, 22, 70, 0.94));
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 -6px 18px rgba(0, 0, 0, 0.18);
+        touch-action: none;
+        translate: 0 0;
+        opacity: 1;
+        transition: opacity 0.18s ease-out, translate 0.18s ease-out, visibility 0s;
+    }
+
+    .combo.hidden {
+        display: grid !important;
+        visibility: hidden;
+        opacity: 0;
+        translate: 0 14px;
+        pointer-events: none;
+        transition: opacity 0.25s ease-in, translate 0.25s ease-in, visibility 0s 0.25s;
+    }
+
+    /* Row 1: streak count + multiplier/tier name */
+    .combo-count {
+        grid-area: count;
+        font-size: 1.7rem;
+        line-height: 1;
+        letter-spacing: -0.5px;
+    }
+
+    .combo-mult {
+        grid-area: mult;
+        min-width: 0;
+        font-size: 1rem;
+        line-height: 1.2;
+        font-weight: 800;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Streak timer: a thin rim along the top edge, inside the rounded corners */
+    .combo > span.combo-meter {
+        position: absolute;
+        top: 5px;
+        left: 22px;
+        right: 22px;
+        height: 3px;
+        border-radius: 2px;
+        background: rgba(255, 255, 255, 0.18);
+    }
+
+    .combo-meter span {
+        background: rgba(255, 255, 255, 0.9);
+        box-shadow: 0 0 6px rgba(var(--ga, 255, 255, 255), 0.9);
+    }
+
+    /* Rows 2-3: next-tier hint above its own track */
+    .combo > span.combo-next {
+        grid-area: next;
+        display: grid;
+        grid-template-rows: auto 6px;
+        row-gap: 5px;
+        height: auto;
+        border-radius: 0;
+        background: none;
+        overflow: visible;
+    }
+
+    .combo-next::before {
+        content: "";
+        grid-row: 2;
+        grid-column: 1;
+        border-radius: 3px;
+        background: rgba(0, 0, 0, 0.3);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+    }
+
+    .combo-next-fill {
+        position: relative;
+        inset: auto;
+        grid-row: 2;
+        grid-column: 1;
+        border-radius: 3px;
+        /* White core so it reads on every tier fill (tiers 1-4 paint the panel in the tier colour) */
+        background: linear-gradient(90deg, rgba(255, 255, 255, 0.85), #fff);
+        box-shadow: 0 0 8px rgba(var(--gb, 255, 255, 255), 0.9);
+    }
+
+    .combo-next-label {
+        grid-row: 1;
+        grid-column: 1;
+        padding: 0;
+        font-size: 0.72rem;
+        line-height: 1.25;
+        font-weight: 700;
+        text-align: left;
+        opacity: 0.9;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+    }
+
+    /* Tier 22 is the top: the label then reads "TOP TIER!" on its own */
+    .combo:not([data-tier="22"]) .combo-next-label::before {
+        content: "NEXT ›  ";
+        font-size: 0.62rem;
+        letter-spacing: 1px;
+        opacity: 0.7;
+    }
+
+    /* Epic layers follow the panel shape. Auras pulse instead of spinning: a full-width
+       rotating rectangle would sweep far above the panel over the Study button. */
+    .combo[data-epic] .combo-fx {
+        border-radius: 20px 20px 0 0;
+    }
+
+    .combo[data-epic][data-tier]::before {
+        inset: -8px 0 0;
+        border-radius: 22px 22px 0 0;
+        filter: blur(7px);
+        animation: cx-aura var(--tp, 1s) var(--te, ease-in-out) infinite alternate;
+    }
+
+    /* Whole-panel motion (tremor, warp, heartbeat, wobble) would expose the screen edges,
+       so the panel stays put and the headline row carries the motion instead */
+    .combo[data-tier] {
+        animation: none;
+    }
+
+    .combo:is([data-tier="6"], [data-tier="9"], [data-tier="16"]) :is(.combo-count, .combo-mult) {
+        animation: cx-tremor 0.1s linear infinite;
+    }
+
+    .combo[data-tier="8"] :is(.combo-count, .combo-mult) {
+        animation: cx-warp 2.4s ease-in-out infinite;
+    }
+
+    .combo:is([data-tier="10"], [data-tier="22"]) :is(.combo-count, .combo-mult) {
+        animation: cx-heart 0.8s ease-in-out infinite;
+    }
+
+    .combo[data-tier="12"] :is(.combo-count, .combo-mult) {
+        animation: cx-wobble 0.5s ease-in-out infinite alternate;
+    }
+
+    .combo-count {
+        transform-origin: 50% 60%;
+    }
+
+    .combo-mult {
+        transform-origin: 0 60%;
+    }
 }
 
 /* ----- Touch devices: no pinch / double-tap zoom anywhere -----

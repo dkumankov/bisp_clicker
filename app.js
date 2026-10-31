@@ -848,7 +848,8 @@ function updateCombo() {
     if (tier >= 5) combo.dataset.epic = tier >= 11 ? '2' : '1';
     else delete combo.dataset.epic;
     if (tier > lastComboTier && !reduceMotion) {
-        combo.animate(
+        // The docked full-width panel on phones stays put; its count pops instead
+        (sheetQuery.matches ? $('combo-count') : combo).animate(
             [{ transform: 'scale(1)' }, { transform: 'scale(1.25)' }, { transform: 'scale(1)' }],
             { duration: 300, easing: 'ease-out' }
         );
