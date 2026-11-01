@@ -102,10 +102,25 @@ const SCHOOL_FANFARES = {
     }
 };
 
+// Context lifecycle tuning (see the comments in SoundManager)
+const RESUME_CHECK_MS = 1500;   // a gesture-driven resume() that hasn't reached 'running' by then has failed
+const MAX_FAILED_RESUMES = 3;   // ...this many in a row: the context is dead (iOS), build a new one on the next tap
+const KICK_AFTER_HIDDEN_MS = 3000;  // back from the background after this long: suspend+resume on the first tap
+const MAX_VOICES = 64;          // hard cap on overlapping notes; new ones are dropped beyond it
+const NOISE_SECONDS = 2;        // one shared noise buffer, every burst plays a random slice of it
+// The compressor adds automatic makeup gain (~+4 dB at these settings): 0.45 into it is as loud as
+// the old plain 0.7 for a single sound (measured), only stacked peaks get squashed
+const MASTER_WITH_COMPRESSOR = 0.45;
+
 /**
  * Synthesised sound effects (WebAudio, no audio files).
  * The AudioContext is only created on the first user gesture (required by
  * mobile browsers), so nothing plays before the first tap.
+ *
+ * Signal chain: notes -> master gain -> compressor -> speakers. The compressor only bites when many
+ * sounds stack up (fanfares over a crowd of auto-clicks) and keeps the sum from clipping.
+ * All timing is scheduled on the audio clock (ctx.currentTime), never with timers, so melodies are
+ * unaffected by throttled background tabs.
  */
 export class SoundManager {
     constructor() {
@@ -114,6 +129,15 @@ export class SoundManager {
         this.enabled = this.loadPreference();
         this.lastClickTime = 0;
         this.lastAutoClickTime = 0;
+
+        this.noiseBuffer = null;
+        this.voiceEnds = [];          // audio-clock end times of the notes still sounding
+        this.failedResumes = 0;
+        this.resumeCheck = null;      // timer verifying the last gesture-driven resume()
+        this.needsRecreate = false;   // the context is beyond repair: replace it on the next gesture
+        this.needsKick = false;       // back from the background: suspend+resume on the next gesture
+        this.hiddenAt = 0;
+        this.clockProbe = null;       // {ctx, wall} sample to spot a 'running' context whose clock is frozen
 
         this.installUnlockHandlers();
     }
@@ -135,45 +159,178 @@ export class SoundManager {
      * comes in. Only a gesture is guaranteed to bring it back, so every tap retries until it runs.
      */
     installUnlockHandlers() {
-        const unlock = () => {
-            if (!this.enabled || this.running) return;  // cheap no-op once sound works
-            this.unlock();
+        const onGesture = () => {
+            if (!this.enabled) return;
+            if (this.clockFrozen()) this.needsKick = true;
+            if (this.running && !this.needsKick) return;  // cheap no-op once sound works
+            this.unlock(true);
         };
         ['pointerdown', 'touchend', 'click', 'keydown'].forEach(evt =>
-            window.addEventListener(evt, unlock, true));
-        // Back from the background: try right away (allowed once unlocked); the next tap covers the rest
+            window.addEventListener(evt, onGesture, true));
+
+        // Back from the background / bfcache / a frozen tab: try right away (allowed once unlocked on
+        // most browsers); if that isn't enough, the next tap retries with a gesture
+        const onReturn = () => {
+            if (document.hidden) return;
+            if (this.hiddenAt && performance.now() - this.hiddenAt > KICK_AFTER_HIDDEN_MS) this.needsKick = true;
+            this.hiddenAt = 0;
+            this.clockProbe = null;   // the clock legitimately stood still while hidden
+            if (this.enabled && this.audioContext && !this.running) this.unlock(false);
+        };
         document.addEventListener('visibilitychange', () => {
-            if (!document.hidden && this.enabled && this.audioContext && !this.running) this.unlock();
+            if (document.hidden) this.hiddenAt = this.hiddenAt || performance.now();
+            else onReturn();
         });
+        window.addEventListener('pageshow', onReturn);
+        window.addEventListener('focus', onReturn);
+        document.addEventListener('resume', onReturn);   // Page Lifecycle: tab unfrozen (Chrome)
+        document.addEventListener('freeze', () => { this.hiddenAt = this.hiddenAt || performance.now(); });
     }
 
-    /** Create the context (gesture only) or resume a suspended/interrupted one */
-    unlock() {
-        if (!this.audioContext || this.audioContext.state === 'closed') {
+    /** Build a fresh context and master chain (must run inside a gesture to start unlocked) */
+    createContext() {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (!Ctx) return false;
+        try {
+            const ctx = new Ctx();
+            const master = ctx.createGain();
+            master.gain.value = 0.7;
+            let out = ctx.destination;
+            if (ctx.createDynamicsCompressor) {
+                // Transparent for single sounds (its auto makeup gain is offset by the lower master
+                // level), squashes only the peaks of many overlapping ones
+                const comp = ctx.createDynamicsCompressor();
+                comp.threshold.value = -12;
+                comp.knee.value = 6;
+                comp.ratio.value = 4;
+                comp.attack.value = 0.003;
+                comp.release.value = 0.25;
+                comp.connect(ctx.destination);
+                out = comp;
+                master.gain.value = MASTER_WITH_COMPRESSOR;
+            }
+            master.connect(out);
+            // React to the browser's own state changes too, not only to taps: iOS goes
+            // 'interrupted' on calls/Siri/lock and may come back by itself
+            ctx.addEventListener?.('statechange', () => this.onStateChange(ctx));
+            this.audioContext = ctx;
+            this.master = master;
+            this.noiseBuffer = null;
+            this.voiceEnds = [];
+            this.failedResumes = 0;
+            this.needsRecreate = false;
+            this.needsKick = false;
+            this.clockProbe = null;
+            return true;
+        } catch (e) {
+            console.warn('Web Audio API not supported', e);
+            this.audioContext = null;
+            this.master = null;
+            return false;
+        }
+    }
+
+    onStateChange(ctx) {
+        if (ctx !== this.audioContext) return;   // an old, replaced context
+        if (ctx.state === 'running') {
+            this.failedResumes = 0;
+            return;
+        }
+        // 'suspended' / 'interrupted' while we're visible: ask to resume (may need a tap on iOS; the
+        // gesture handler covers that). Not when hidden: the browser suspends on purpose then.
+        if (ctx.state !== 'closed' && this.enabled && !document.hidden) this.resume(ctx);
+    }
+
+    resume(ctx) {
+        try {
+            return Promise.resolve(ctx.resume()).catch(() => { });
+        } catch (e) {
+            return Promise.resolve();
+        }
+    }
+
+    /**
+     * Create the context (gesture only) or resume a suspended/interrupted one.
+     * @param {boolean} gesture - called from inside a user gesture (only then may we create/replace)
+     */
+    unlock(gesture = true) {
+        let ctx = this.audioContext;
+        if (!ctx || ctx.state === 'closed' || this.needsRecreate) {
+            if (!gesture) return;
+            if (ctx && ctx.state !== 'closed') ctx.close?.().catch(() => { });
+            if (!this.createContext()) return;
+            ctx = this.audioContext;
+        }
+
+        if (ctx.state === 'running') {
+            // iOS can report 'running' while the output is muted (after another app played audio, or
+            // after a long background): suspend+resume re-attaches the output. A frozen clock means
+            // the same (needsKick is set for both). Only inside a gesture, so the resume half is allowed.
+            if (gesture && this.needsKick) {
+                this.needsKick = false;
+                this.clockProbe = null;
+                Promise.resolve(ctx.suspend?.()).catch(() => { }).then(() => this.resume(ctx));
+                this.verifyResume(ctx);
+            }
+            return;
+        }
+
+        // 'suspended' everywhere, 'interrupted' on iOS after calls / app switches
+        this.resume(ctx);
+        if (gesture) {
+            this.verifyResume(ctx);
+            // Older iOS only unlocks output once something actually starts inside the gesture: a silent sample
             try {
-                const Ctx = window.AudioContext || window.webkitAudioContext;
-                if (!Ctx) return;
-                this.audioContext = new Ctx();
-                this.master = this.audioContext.createGain();
-                this.master.gain.value = 0.7;
-                this.master.connect(this.audioContext.destination);
-            } catch (e) {
-                console.warn('Web Audio API not supported', e);
-                this.audioContext = null;
+                const src = ctx.createBufferSource();
+                src.buffer = ctx.createBuffer(1, 1, ctx.sampleRate);
+                src.connect(ctx.destination);
+                src.start(0);
+            } catch (e) { /* not fatal: resume() alone works on current browsers */ }
+        }
+    }
+
+    /**
+     * A gesture-driven resume must reach 'running' shortly. iOS 17+ sometimes leaves a context stuck in
+     * 'interrupted'/'suspended' for good after a long background: count the failures and, after a few,
+     * close it and build a new one on the next tap (a fresh context works again).
+     */
+    verifyResume(ctx) {
+        if (this.resumeCheck) return;   // one check in flight is enough, taps don't stack them
+        const t0 = ctx.currentTime;
+        this.resumeCheck = setTimeout(() => {
+            this.resumeCheck = null;
+            if (ctx !== this.audioContext) return;
+            // Running *and* the clock moved (a 'running' context with a stopped clock is just as dead)
+            if (ctx.state === 'running' && ctx.currentTime - t0 > RESUME_CHECK_MS / 1000 * 0.25) {
+                this.failedResumes = 0;
                 return;
             }
-        }
+            if (document.hidden) return;   // not a failure: we left before it could resume
+            if (++this.failedResumes >= MAX_FAILED_RESUMES) {
+                this.needsRecreate = true;
+                ctx.close?.().catch(() => { });
+            }
+        }, RESUME_CHECK_MS);
+    }
+
+    /**
+     * 'running' but the audio clock doesn't move: the output is dead (seen on iOS after interruptions).
+     * Compares how far ctx.currentTime moved against wall time since the previous probe.
+     */
+    clockFrozen() {
         const ctx = this.audioContext;
-        if (ctx.state === 'running') return;
-        // 'suspended' everywhere, 'interrupted' on iOS after calls / app switches
-        ctx.resume().catch(() => { });
-        // Older iOS only unlocks output once something actually starts inside the gesture: a silent sample
-        try {
-            const src = ctx.createBufferSource();
-            src.buffer = ctx.createBuffer(1, 1, ctx.sampleRate);
-            src.connect(ctx.destination);
-            src.start(0);
-        } catch (e) { /* not fatal: resume() alone works on current browsers */ }
+        if (!ctx || ctx.state !== 'running' || document.hidden) return false;
+        const wall = performance.now();
+        const probe = this.clockProbe;
+        if (!probe || probe.ctx !== ctx) {
+            this.clockProbe = { ctx, time: ctx.currentTime, wall };
+            return false;
+        }
+        const dWall = (wall - probe.wall) / 1000;
+        if (dWall < 1) return false;   // too short to judge (the clock advances in blocks)
+        const dCtx = ctx.currentTime - probe.time;
+        this.clockProbe = { ctx, time: ctx.currentTime, wall };
+        return dCtx < dWall * 0.25;
     }
 
     /** The context exists and is producing sound */
@@ -188,6 +345,15 @@ export class SoundManager {
 
     // ===== Building blocks =====
 
+    /** Reserve a voice until `end` (audio clock); false when MAX_VOICES notes are already sounding */
+    takeVoice(end) {
+        const now = this.audioContext.currentTime;
+        if (this.voiceEnds.length >= MAX_VOICES) this.voiceEnds = this.voiceEnds.filter(t => t > now);
+        if (this.voiceEnds.length >= MAX_VOICES) return false;
+        this.voiceEnds.push(end);
+        return true;
+    }
+
     /**
      * Play one enveloped oscillator note.
      * @param {number} freq - frequency in Hz
@@ -199,6 +365,7 @@ export class SoundManager {
         const ctx = this.audioContext;
         const start = ctx.currentTime + delay;
         const end = start + duration;
+        if (!this.takeVoice(end + 0.02)) return;
 
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
@@ -213,8 +380,22 @@ export class SoundManager {
 
         osc.connect(gain);
         gain.connect(this.master);
+        // Free the nodes right away (some WebKit versions keep finished, still-connected nodes alive)
+        osc.onended = () => { osc.disconnect(); gain.disconnect(); };
         osc.start(start);
         osc.stop(end + 0.02);
+    }
+
+    /** Shared white noise for this context, made once instead of on every burst */
+    getNoiseBuffer() {
+        const ctx = this.audioContext;
+        if (!this.noiseBuffer) {
+            const buffer = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * NOISE_SECONDS), ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+            this.noiseBuffer = buffer;
+        }
+        return this.noiseBuffer;
     }
 
     /** Short burst of filtered noise (for tick/sparkle textures) */
@@ -222,13 +403,11 @@ export class SoundManager {
         if (!this.ready) return;
         const ctx = this.audioContext;
         const start = ctx.currentTime + delay;
-
-        const buffer = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * duration), ctx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+        duration = Math.min(duration, NOISE_SECONDS);
+        if (!this.takeVoice(start + duration)) return;
 
         const src = ctx.createBufferSource();
-        src.buffer = buffer;
+        src.buffer = this.getNoiseBuffer();
         const filter = ctx.createBiquadFilter();
         filter.type = 'highpass';
         filter.frequency.value = freq;
@@ -239,7 +418,10 @@ export class SoundManager {
         src.connect(filter);
         filter.connect(gain);
         gain.connect(this.master);
-        src.start(start);
+        src.onended = () => { src.disconnect(); filter.disconnect(); gain.disconnect(); };
+        // A random slice of the shared buffer, so repeated bursts don't sound identical
+        src.start(start, Math.random() * (NOISE_SECONDS - duration));
+        src.stop(start + duration);
     }
 
     // ===== Game sounds =====
