@@ -108,6 +108,13 @@ const MAX_FAILED_RESUMES = 3;   // ...this many in a row: the context is dead (i
 const KICK_AFTER_HIDDEN_MS = 3000;  // back from the background after this long: suspend+resume on the first tap
 const MAX_VOICES = 64;          // hard cap on overlapping notes; new ones are dropped beyond it
 const NOISE_SECONDS = 2;        // one shared noise buffer, every burst plays a random slice of it
+// Envelope edges: a gain that jumps (or rises within a couple of ms) is heard as a high click on top of
+// the note. Measured in an OfflineAudioContext render of fast taps + fanfares, these remove those steps.
+const TONE_ATTACK = 0.02;       // linear fade-in of a note (capped to a quarter of very short notes)
+const NOISE_ATTACK = 0.005;     // noise slices start at a random sample, never at full volume
+// Notes start this far ahead of currentTime: on mobile the render thread can already be past the value
+// main-thread JS sees, and a note scheduled "in the past" starts mid-fade-in, i.e. with a jump
+const LOOKAHEAD = 0.01;
 // The compressor adds automatic makeup gain (~+4 dB at these settings): 0.45 into it is as loud as
 // the old plain 0.7 for a single sound (measured), only stacked peaks get squashed
 const MASTER_WITH_COMPRESSOR = 0.45;
@@ -368,7 +375,7 @@ export class SoundManager {
     playTone(freq, duration, { delay = 0, type = 'sine', volume = 0.2, slideTo = null } = {}) {
         if (!this.ready) return;
         const ctx = this.audioContext;
-        const start = ctx.currentTime + delay;
+        const start = ctx.currentTime + LOOKAHEAD + delay;
         const end = start + duration;
         if (!this.takeVoice(end + 0.02)) return;
 
@@ -378,9 +385,18 @@ export class SoundManager {
         osc.frequency.setValueAtTime(freq, start);
         if (slideTo) osc.frequency.exponentialRampToValueAtTime(slideTo, end);
 
-        // Quick attack avoids clicks, exponential decay sounds natural
-        gain.gain.setValueAtTime(0.0001, start);
-        gain.gain.exponentialRampToValueAtTime(volume, start + 0.01);
+        // Linear attack from silence (an exponential one sits near zero, then shoots up in its last
+        // 1-2 ms: a click), exponential decay sounds natural; stop only once the gain is ~0.
+        // The ramp adds energy the old near-instant attack didn't have (+3 dB on a 90 ms click):
+        // scale the peak so every note keeps its old loudness (long notes are barely touched)
+        const attack = Math.min(TONE_ATTACK, duration / 4);
+        const tail = 2 * Math.log(Math.max(volume, 0.001) / 0.0001);   // energy decay of the tail per second
+        const peak = volume * Math.sqrt((duration / tail) / (attack / 3 + (duration - attack) / tail));
+        // value = 0 first: a GainNode is 1 until its first event, and a source starting a fraction of a
+        // sample early would put one full-scale sample through it
+        gain.gain.value = 0;
+        gain.gain.setValueAtTime(0, start);
+        gain.gain.linearRampToValueAtTime(peak, start + attack);
         gain.gain.exponentialRampToValueAtTime(0.0001, end);
 
         osc.connect(gain);
@@ -407,7 +423,7 @@ export class SoundManager {
     playNoise(duration, { delay = 0, volume = 0.08, freq = 3000 } = {}) {
         if (!this.ready) return;
         const ctx = this.audioContext;
-        const start = ctx.currentTime + delay;
+        const start = ctx.currentTime + LOOKAHEAD + delay;
         duration = Math.min(duration, NOISE_SECONDS);
         if (!this.takeVoice(start + duration)) return;
 
@@ -417,7 +433,9 @@ export class SoundManager {
         filter.type = 'highpass';
         filter.frequency.value = freq;
         const gain = ctx.createGain();
-        gain.gain.setValueAtTime(volume, start);
+        gain.gain.value = 0;   // see playTone
+        gain.gain.setValueAtTime(0, start);
+        gain.gain.linearRampToValueAtTime(volume, start + Math.min(NOISE_ATTACK, duration / 4));
         gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
 
         src.connect(filter);

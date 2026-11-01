@@ -1,6 +1,6 @@
 import { GameEngine } from './game-engine.js?v=f5521135';
 import { SaveManager, MIN_OFFLINE_SECONDS } from './save-manager.js?v=978fd4cb';
-import { SoundManager } from './sound-manager.js?v=51b969af';
+import { SoundManager } from './sound-manager.js?v=2abe035d';
 import { ComboFx } from './combo-fx.js?v=3872703e';
 import { AutoClickers } from './autoclickers.js?v=4287a611';
 import { fetchLeaderboard, postScore, validateName, cleanName, timeAgo, SUBMIT_INTERVAL_MS } from './leaderboard.js?v=2fa056b9';
