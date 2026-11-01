@@ -62,7 +62,7 @@ function hashOf(rel) {
 
 const html = read(ENTRY);
 const htmlOut = html.replace(HTML_REF, (m, pre, q, spec) =>
-  isLocal(spec) && /\.(js|css|webp|png|jpe?g|svg|gif|ico)$/i.test(spec)
+  isLocal(spec) && /\.(js|css|webp|png|jpe?g|svg|gif|ico|json)$/i.test(spec)
     ? `${pre}${q}${spec}?v=${hashOf(norm(ENTRY, spec))}${q}`
     : m);
 if (htmlOut !== html) pending.set(ENTRY, htmlOut);
