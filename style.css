@@ -1875,6 +1875,15 @@ button:focus-visible,
     flex-shrink: 0;
 }
 
+/* First line: IQ + iq/s side by side; graduations sit on the second line */
+.lb-main {
+    display: flex;
+    align-items: baseline;
+    justify-content: flex-end;
+    gap: 0.4rem;
+    white-space: nowrap;
+}
+
 .lb-row small {
     font-size: 0.75rem;
     opacity: 0.65;

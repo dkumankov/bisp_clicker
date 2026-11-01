@@ -128,21 +128,28 @@ export class SoundManager {
         }
     }
 
-    /** Create/resume the audio context on the first tap or key press */
+    /**
+     * Create/resume the audio context on user gestures. The listeners stay for the whole session:
+     * resume() is async (the state may still read 'suspended' right after the first tap), and iOS
+     * suspends or 'interrupts' the context whenever the app is backgrounded, the screen locks or a call
+     * comes in. Only a gesture is guaranteed to bring it back, so every tap retries until it runs.
+     */
     installUnlockHandlers() {
         const unlock = () => {
+            if (!this.enabled || this.running) return;  // cheap no-op once sound works
             this.unlock();
-            if (this.audioContext && this.audioContext.state === 'running') {
-                ['pointerdown', 'touchend', 'keydown'].forEach(evt =>
-                    window.removeEventListener(evt, unlock, true));
-            }
         };
-        ['pointerdown', 'touchend', 'keydown'].forEach(evt =>
+        ['pointerdown', 'touchend', 'click', 'keydown'].forEach(evt =>
             window.addEventListener(evt, unlock, true));
+        // Back from the background: try right away (allowed once unlocked); the next tap covers the rest
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && this.enabled && this.audioContext && !this.running) this.unlock();
+        });
     }
 
+    /** Create the context (gesture only) or resume a suspended/interrupted one */
     unlock() {
-        if (!this.audioContext) {
+        if (!this.audioContext || this.audioContext.state === 'closed') {
             try {
                 const Ctx = window.AudioContext || window.webkitAudioContext;
                 if (!Ctx) return;
@@ -152,17 +159,31 @@ export class SoundManager {
                 this.master.connect(this.audioContext.destination);
             } catch (e) {
                 console.warn('Web Audio API not supported', e);
+                this.audioContext = null;
                 return;
             }
         }
-        if (this.audioContext.state === 'suspended') {
-            this.audioContext.resume().catch(() => { });
-        }
+        const ctx = this.audioContext;
+        if (ctx.state === 'running') return;
+        // 'suspended' everywhere, 'interrupted' on iOS after calls / app switches
+        ctx.resume().catch(() => { });
+        // Older iOS only unlocks output once something actually starts inside the gesture: a silent sample
+        try {
+            const src = ctx.createBufferSource();
+            src.buffer = ctx.createBuffer(1, 1, ctx.sampleRate);
+            src.connect(ctx.destination);
+            src.start(0);
+        } catch (e) { /* not fatal: resume() alone works on current browsers */ }
+    }
+
+    /** The context exists and is producing sound */
+    get running() {
+        return !!this.audioContext && this.audioContext.state === 'running';
     }
 
     /** True only once the user has interacted and sound is switched on */
     get ready() {
-        return this.enabled && this.audioContext && this.audioContext.state === 'running';
+        return this.enabled && this.running;
     }
 
     // ===== Building blocks =====

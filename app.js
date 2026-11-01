@@ -1,6 +1,6 @@
-import { GameEngine } from './game-engine.js?v=1d90237d';
-import { SaveManager, MIN_OFFLINE_SECONDS } from './save-manager.js?v=a1dec568';
-import { SoundManager } from './sound-manager.js?v=8666558e';
+import { GameEngine } from './game-engine.js?v=f5521135';
+import { SaveManager, MIN_OFFLINE_SECONDS } from './save-manager.js?v=978fd4cb';
+import { SoundManager } from './sound-manager.js?v=274f557e';
 import { ComboFx } from './combo-fx.js?v=3872703e';
 import { AutoClickers } from './autoclickers.js?v=4287a611';
 import { fetchLeaderboard, postScore, validateName, cleanName, timeAgo, SUBMIT_INTERVAL_MS } from './leaderboard.js?v=2fa056b9';
@@ -21,6 +21,7 @@ const sheetQuery = window.matchMedia('(max-width: 768px) and (orientation: portr
 // ===== Global state =====
 let currentTab = 'students';
 let lastFrameTime = performance.now();
+let lastLoopAt = performance.now();  // performance.now() at the last game loop run, to spot freezes
 let displayedIQ = 0;            // Value currently shown (animated towards game.iq)
 let hiddenAt = null;            // Timestamp when the page was hidden
 let justBought = null;          // Key of the card to animate after the next render
@@ -119,7 +120,7 @@ function setupEventListeners() {
     // Study button: pointerdown for instant response (and multi-touch); click only for keyboard
     studyButton.addEventListener('pointerdown', (e) => {
         if (e.pointerType === 'mouse' && e.button !== 0) return;
-        handleStudyClick(e.clientX, e.clientY);
+        handleStudyClick(e.clientX, e.clientY, tapTime(e));
     });
     studyButton.addEventListener('click', (e) => {
         if (e.detail !== 0) return;  // Real pointer clicks were handled on pointerdown
@@ -186,7 +187,7 @@ function handleVisibilityChange() {
         submitScore();
         return;
     }
-    lastFrameTime = performance.now();
+    lastFrameTime = lastLoopAt = performance.now();
     if (hiddenAt === null) return;
 
     const seconds = saveManager.getAwaySeconds(hiddenAt);
@@ -202,8 +203,15 @@ function handleVisibilityChange() {
 }
 
 // ===== Study Button =====
-function handleStudyClick(x, y) {
-    const value = game.handleClick();
+/** When the tap really happened: during a freeze the event waits in the queue, the streak must not pay for that */
+function tapTime(e) {
+    const now = performance.now();
+    // Old WebKit gave epoch ms here: only trust a stamp in the performance.now() timebase
+    return e.timeStamp > now - 5000 && e.timeStamp <= now ? e.timeStamp : now;
+}
+
+function handleStudyClick(x, y, time = performance.now()) {
+    const value = game.handleClick(time);
     const comboMult = game.getComboMultiplier();
 
     soundManager.playClick(game.combo / CLICK_PITCH_TOP);
@@ -939,6 +947,11 @@ function updateCombo() {
 }
 
 // ===== Golden School Badge =====
+const buffBar = $('buff-bar');
+const buffText = $('buff-text');
+const buffTime = $('buff-time');
+const buffFill = $('buff-progress-fill');
+
 function scheduleGolden(first = false) {
     const range = game.getGoldenDelayRange();
     const lo = first ? GOLDEN_CONFIG.first_min_delay : range.min;
@@ -955,14 +968,13 @@ function updateGolden(now) {
         spawnGolden(now);
     }
 
-    // Bonus countdown in the HUD
+    // Bonus countdown under the campus panel
     const buff = game.active_events.find(e => e.id === 'golden');
-    const buffBar = $('buff-bar');
     buffBar.classList.toggle('hidden', !buff);
     if (buff) {
-        $('buff-text').textContent = `x${GOLDEN_CONFIG.multiplier} IQ/s + clicks`;
-        $('buff-time').textContent = Math.ceil(buff.time_remaining) + 's';
-        $('buff-progress-fill').style.width = (buff.time_remaining / buff.duration * 100) + '%';
+        setText(buffText, `x${GOLDEN_CONFIG.multiplier} IQ/s + clicks`);
+        setText(buffTime, Math.max(0, Math.ceil(buff.time_remaining)) + 's');
+        buffFill.style.width = (Math.min(1, Math.max(0, buff.time_remaining / buff.duration)) * 100 || 0) + '%';
     }
 }
 
@@ -1339,9 +1351,9 @@ let submitting = false;
 let lbEntries = [];
 let lbSortBy = 'iq';
 
-/** Lifetime IQ is the ranking value: it never drops when the player graduates */
+/** Current IQ balance is the ranking value: it resets to 0 when the player graduates */
 function scoreIq() {
-    return Math.floor(game.lifetime_iq);
+    return Math.floor(game.iq);
 }
 
 /** Send the score; unchanged IQ and a missing name are skipped unless forced */
@@ -1489,7 +1501,10 @@ function renderLeaderboard() {
         ips.className = 'lb-ips';
         // Older records have no iqPerSec: show a dash
         ips.textContent = Number.isFinite(entry.iqPerSec) ? game.formatNumberShort(entry.iqPerSec) + '/s' : '—/s';
-        stats.append(iq, ips, grad);
+        const main = document.createElement('span');
+        main.className = 'lb-main';
+        main.append(iq, ips);
+        stats.append(main, grad);
 
         li.append(rank, who, stats);
         list.appendChild(li);
@@ -1549,25 +1564,50 @@ function syncAutoclickers(now) {
     }
 }
 
+// Each step runs on its own: a bug in one UI piece must never stop IQ/s, the streak or the rest of the loop
+const LOOP_STEPS = [
+    ['update', (now, dt) => game.update(dt)],
+    ['autoclickers', (now) => syncAutoclickers(now)],
+    ['stats', () => updateStats()],
+    ['affordability', () => updateAffordability()],  // Only toggles CSS classes, doesn't recreate the DOM
+    ['combo', () => updateCombo()],
+    ['golden', (now) => updateGolden(now)],
+    ['campus', () => updateCampus()],
+    ['milestones', () => checkMilestones()],
+    ['graduate', () => checkGraduateButton()],
+    ['achievements', () => checkAchievements()]
+];
+const STALL_GRACE_MS = 100;  // frames up to this long are normal; anything longer is a freeze
+const MAX_STALL_MS = 5000;   // longer gaps are the app being away (rAF paused), and drop the streak as before
+const loopErrors = new Set();  // "step: message" already logged (a broken step would fire every frame)
+
 function gameLoop(now) {
+    // Scheduled first, so even an uncaught error below can't end the loop
+    requestAnimationFrame(gameLoop);
+
     // Clamp so a throttled/background frame never causes a huge jump
     // (time spent away is rewarded separately as offline progress)
-    const deltaTime = Math.min((now - lastFrameTime) / 1000, 1);
+    const deltaTime = Math.min(Math.max((now - lastFrameTime) / 1000, 0), 1);
     lastFrameTime = now;
+    // A freeze (heavy effects, GC) is not a pause of the player: give the streak that time back.
+    // Measured with performance.now(): the rAF timestamp can predate the freeze it follows.
+    // Time in the background is not a freeze (hiddenAt is set / visibilitychange resets lastLoopAt)
+    const loopAt = performance.now();
+    const stall = loopAt - lastLoopAt - STALL_GRACE_MS;
+    lastLoopAt = loopAt;
+    if (stall > 0 && stall < MAX_STALL_MS && hiddenAt === null) game.pauseCombo(stall);
 
-    game.update(deltaTime);
-    syncAutoclickers(now);
-
-    updateStats();
-    updateAffordability();  // Only toggles CSS classes, doesn't recreate the DOM
-    updateCombo();
-    updateGolden(now);
-    updateCampus();
-    checkMilestones();
-    checkGraduateButton();
-    checkAchievements();
-
-    requestAnimationFrame(gameLoop);
+    for (const [name, step] of LOOP_STEPS) {
+        try {
+            step(now, deltaTime);
+        } catch (e) {
+            const key = `${name}: ${e && e.message}`;
+            if (!loopErrors.has(key)) {
+                loopErrors.add(key);
+                console.error(`Game loop step "${name}" failed (logged once, the loop keeps running)`, e);
+            }
+        }
+    }
 }
 
 // ===== Start the game =====

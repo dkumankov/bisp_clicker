@@ -170,10 +170,12 @@ async function handleScore(request, env, cors) {
     }
   }
 
-  // Keep the personal best; lower values only refresh lastSeen and prestige.
+  // Store the CURRENT balance (client sends game.iq): graduation resets and spending must show.
+  // A spend-to-mask exploit exists (earn, spend, re-report), but the per-report delta check
+  // still bounds every upward move, so accept the tradeoff — the display must be truthful.
   const saved = {
     name: entry.name,
-    iq: prev ? Math.max(prev.iq, entry.iq) : entry.iq,
+    iq: entry.iq,
     prestige: prev ? Math.max(prev.prestige, entry.prestige) : entry.prestige,
     lastSeen: now
   };

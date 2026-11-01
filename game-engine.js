@@ -1,5 +1,12 @@
 import { STUDENTS, TEACHERS, FACILITIES, UPGRADES, ACHIEVEMENTS, PRESTIGE_CONFIG, COMBO_CONFIG, GOLDEN_CONFIG, DAILY_BONUS_CONFIG, CAMPUS_STAGES, ECONOMY_CONFIG, AUTOCLICKER_CONFIG } from './data.js?v=0cf4557e';
 
+/** A finite number, or the fallback (with a warning and stack) when a NaN/Infinity slips through */
+function finiteOr(value, where, fallback = 0) {
+    if (Number.isFinite(value)) return value;
+    console.warn(`${where}: non-finite value ${value}, using ${fallback}`, new Error().stack);
+    return fallback;
+}
+
 export class GameEngine {
     constructor() {
         this.iq = 0.0;
@@ -56,21 +63,24 @@ export class GameEngine {
     }
 
     /**
-     * One click on Study. auto = an auto-clicker finger: it pushes the streak only while the
-     * player's own streak is alive (it never starts or holds one), and its IQ gets the finger level bonus.
+     * One click on Study. auto = an auto-clicker finger: it pushes a live streak AND extends its
+     * window, and when there is no streak (combo 0 / window expired) it starts a new one, exactly
+     * like a manual tap. So while fingers are alive the streak never stays dead. Its IQ gets the finger level bonus.
+     * now = when the tap really happened (the event's timestamp), not when a busy main thread got to it.
      */
     handleClick(now = performance.now(), auto = false) {
         this.clicks++;
 
-        if (auto) {
-            if (this.combo > 0 && now - this.last_click_time <= this.getComboWindow()) this.combo++;
-        } else if (this.combo > 0 && now - this.last_click_time <= this.getComboWindow()) {
-            // Extend the combo streak if the click is quick enough, otherwise restart it
+        if (this.combo > 0 && now - this.last_click_time <= this.getComboWindow()) {
+            // Quick enough: extend the streak and restart its window (never backwards: a tap
+            // queued during a freeze can be older than a window already pushed by pauseCombo)
             this.combo++;
+            this.last_click_time = Math.max(this.last_click_time, now);
         } else {
+            // Tap (manual or finger) after the window passed, or with no streak: start a new one
             this.combo = 1;
+            this.last_click_time = now;
         }
-        if (!auto) this.last_click_time = now;
         this.best_combo = Math.max(this.best_combo, this.combo);
 
         const clickValue = this.calculateClickPower() * this.getComboMultiplier() * (auto ? this.getFingerMultiplier() : 1);
@@ -99,6 +109,15 @@ export class GameEngine {
         const from = tier > 0 ? tiers[tier - 1].min : 0;
         const next = tiers[tier];
         return { next, progress: Math.min(1, Math.max(0, (count - from) / (next.min - from))) };
+    }
+
+    /**
+     * The game was frozen for ms (main thread busy): that time doesn't count against the streak.
+     * Without this, the first frame after a long freeze drops the combo before the taps queued
+     * during the freeze are even handled.
+     */
+    pauseCombo(ms) {
+        if (this.combo > 0 && ms > 0) this.last_click_time += ms;
     }
 
     /** Fraction (0..1) of the combo window that is still left, for the combo meter */
@@ -246,7 +265,7 @@ export class GameEngine {
             if (event.type === 'student_bonus' || event.type === 'teacher_boost') power *= event.multiplier;
         }
 
-        return power;
+        return finiteOr(power, 'calculateClickPower', 1);
     }
 
     /** Standard global upgrades multiply together, but past the soft cap they only count by sqrt */
@@ -354,7 +373,7 @@ export class GameEngine {
         }
 
         // 3. Global multipliers
-        return total * this.getGlobalMultiplier(includeEvents);
+        return finiteOr(total * this.getGlobalMultiplier(includeEvents), 'calculateIQPerSecond');
     }
 
     /** Price factor from the n-th finger to the next one: x2.5, x2.75, x3, ... */
@@ -558,7 +577,9 @@ export class GameEngine {
         return true;
     }
 
+    /** The only way IQ is earned; a NaN/Infinity here would poison the balance and the save for good */
     addIQ(amount) {
+        amount = finiteOr(amount, 'addIQ');
         this.iq += amount;
         this.total_iq_earned += amount;
         this.lifetime_iq += amount;

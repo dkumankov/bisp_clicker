@@ -14,9 +14,24 @@ function num(value, fallback = 0) {
     return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
 }
 
-/** Copy saved values over the defaults, so ids added in newer versions are never missing */
+/** A count that can't go below zero or be fractional (NaN/garbage becomes 0) */
+function count(value) {
+    return Math.max(0, Math.floor(num(value)));
+}
+
+/**
+ * Copy saved values over the defaults, so ids added in newer versions are never missing.
+ * Each value is cleaned to the type of its default (counts or owned flags), so a corrupt
+ * entry can't push NaN into production. Unknown ids are dropped.
+ */
 function mergeMap(defaults, saved) {
-    return { ...defaults, ...(saved && typeof saved === 'object' ? saved : {}) };
+    const src = saved && typeof saved === 'object' ? saved : {};
+    const out = {};
+    for (const [id, def] of Object.entries(defaults)) {
+        const v = src[id];
+        out[id] = typeof def === 'boolean' ? v === true : (v === undefined ? def : count(v));
+    }
+    return out;
 }
 
 export class SaveManager {
@@ -77,23 +92,23 @@ export class SaveManager {
             const saveData = JSON.parse(saveDataStr);
 
             // Restore game state
-            gameEngine.iq = num(saveData.iq);
-            gameEngine.total_iq_earned = num(saveData.total_iq_earned);
-            gameEngine.lifetime_iq = num(saveData.lifetime_iq);
+            gameEngine.iq = Math.max(0, num(saveData.iq));
+            gameEngine.total_iq_earned = Math.max(0, num(saveData.total_iq_earned));
+            gameEngine.lifetime_iq = Math.max(0, num(saveData.lifetime_iq));
             gameEngine.click_power = num(saveData.click_power, 1.0) || 1.0;
-            gameEngine.clicks = num(saveData.clicks);
+            gameEngine.clicks = count(saveData.clicks);
             gameEngine.students = mergeMap(gameEngine.students, saveData.students);
             gameEngine.teachers = mergeMap(gameEngine.teachers, saveData.teachers);
             gameEngine.facilities = mergeMap(gameEngine.facilities, saveData.facilities);
             gameEngine.upgrades = mergeMap(gameEngine.upgrades, saveData.upgrades);
             gameEngine.achievements = mergeMap(gameEngine.achievements, saveData.achievements);
-            gameEngine.certificates = num(saveData.certificates);
-            gameEngine.graduations = num(saveData.graduations);
-            gameEngine.autoclickers = Math.max(0, Math.floor(num(saveData.autoclickers)));  // Missing in older saves
+            gameEngine.certificates = count(saveData.certificates);
+            gameEngine.graduations = count(saveData.graduations);
+            gameEngine.autoclickers = count(saveData.autoclickers);  // Missing in older saves
             const maxLevel = AUTOCLICKER_CONFIG.levels.length - 1;
             gameEngine.finger_level = Math.min(maxLevel, Math.max(0, Math.floor(num(saveData.finger_level))));  // Missing before v3
-            gameEngine.best_combo = num(saveData.best_combo);      // Missing in v1 saves
-            gameEngine.golden_clicks = num(saveData.golden_clicks);  // Missing in v1 saves
+            gameEngine.best_combo = count(saveData.best_combo);      // Missing in v1 saves
+            gameEngine.golden_clicks = count(saveData.golden_clicks);  // Missing in v1 saves
             gameEngine.leaderboard_name = typeof saveData.leaderboard_name === 'string' ? saveData.leaderboard_name : '';  // Missing in older saves
             gameEngine.last_bonus_date = typeof saveData.last_bonus_date === 'string' ? saveData.last_bonus_date : '';  // Missing in older saves
             result.loaded = true;
