@@ -191,6 +191,11 @@ export class SoundManager {
     createContext() {
         const Ctx = window.AudioContext || window.webkitAudioContext;
         if (!Ctx) return false;
+        // Play even in silent mode (iOS mute switch). Requires iOS 17+; harmless elsewhere.
+        // Tradeoff (Stas's decision): this session type pauses the player's own music.
+        try {
+            if (navigator.audioSession) navigator.audioSession.type = 'playback';
+        } catch (e) { /* not supported: keep the default (silent switch wins) */ }
         try {
             const ctx = new Ctx();
             const master = ctx.createGain();
